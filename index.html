@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Kutuphane Sistemi - Panel</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <header class="header">
+            <div class="container">
+                <h1 class="logo">
+                    <img src="images/ktulogo.png" alt="ktu" class="logo-img">
+                     Kütüphane Sistemi
+                </h1>   
+                <nav class="nav">
+                    <a href="index.html" class="nav-link active">Panel</a>
+                    <a href="kitaplar.html" class="nav-link">Kitaplar</a>
+                    <a href="uyeler.html" class="nav-link">Üyeler</a>
+                    <a href="islemler.html" class="nav-link">İşlemler</a>
+                </nav>
+                <div class="search-box">
+                    <input type="text" placeholder="Kitapları veya üyeleri ara" class="search-input">
+                </div>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="container">
+                <h2>Kütüphane Paneli</h2>
+                
+                    <div class="stats-grid">
+                        <a href="kitaplar.html">
+                            <div class="stat-card">
+                                <div class="stat-number">0</div>
+                                <div class="stat-label">Toplam Kitap Sayısı</div>
+                            </div>
+                        </a>
+                        <a href="odunc.html">
+                            <div class="stat-card">
+                                <div class="stat-number">0</div>
+                                <div class="stat-label">Ödünç Alınan Kitaplar</div>
+                         </div>
+                        </a>
+                        <a href="mevcut.html">
+                            <div class="stat-card available">
+                                <div class="stat-number">0</div>
+                                <div class="stat-label">Mevcut Kitaplar</div>
+                            </div>
+                        </a>
+                        <a href="gec.html">
+                            <div class="stat-card overdue">
+                                <div class="stat-number">0</div>
+                                <div class="stat-label">Geç Kalan Kitaplar</div>  
+                            </div>
+                        </a>
+                    </div>
+
+                <div class="dashboard-content">
+                    <div class="recent-transactions">
+                        <h3>Son İşlemler</h3>
+                        <div class="transaction-list">
+                            <div class="empty-state">
+                                <p>Henüz işlem yok</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <h3>Hızlı Eylemler</h3>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary">Yeni Kitap Ekle</button>
+                            <button class="btn btn-secondary">Üye kaydet</button>
+                            <button class="btn btn-secondary">Kitabı Geri Ver</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+              <p>&copy; 2025 Kütüphane Projesi.</p>
+              <a href="mailto:458364@ogr.ktu.edu.tr">458364@ogr.ktu.edu.tr</a>
+              <br>
+              <a href="anasyafa.html">Anasayfa</a>
+        </footer>
+    </body>
+</html>
