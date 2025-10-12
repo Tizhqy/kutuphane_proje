@@ -16,7 +16,7 @@ body {
     padding: 0 20px;
 }
 
-.hero{
+.hero {
     background: linear-gradient(135deg, #1a237e 0%, #8d96d4 100%);
     min-height: 100vh;
     display: flex;
@@ -51,7 +51,7 @@ body {
     height: 120px;
     width: auto;
     margin-bottom: 2rem;
-    border: 5px,solid , #b4b6c1b0 ;
+    border: 5px, solid, #b4b6c1b0;
     border-radius: 50%;
 }
 
@@ -59,7 +59,7 @@ body {
     font-size: 3.5rem;
     font-weight: bold;
     margin-bottom: 1rem;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .hero-content p {
@@ -80,7 +80,7 @@ body {
 
 /* butonlar */
 
-.btn{
+.btn {
     padding: 0.75rem 1.5rem;
     border: none;
     border-radius: 50px;
@@ -92,25 +92,25 @@ body {
     display: inline-block;
 }
 
-.btn-primary{
+.btn-primary {
     background: #f5f5f5;
     color: #1a237e;
     border: 1px solid #ddd;
 }
 
-.btn-primary:hover{
+.btn-primary:hover {
     background: #3d3e45;
     color: white;
 }
 
 /* ozellikler */
 
-.features{
+.features {
     padding: 6rem 0;
     background: #f8f9fa;
 }
 
-.features h2{
+.features h2 {
     text-align: center;
     font-weight: bold;
     font-size: 2.5rem;
@@ -124,26 +124,26 @@ body {
     margin-top: 3rem;
 }
 
-.features-logo{
+.features-logo {
     font-size: 3rem;
 }
 
-.features-card{
+.features-card {
     background: white;
     padding: 2.5rem;
     border-radius: 15px;
     text-align: center;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .features-card:hover {
     transform: translateY(-10px);
-    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
 }
 
 /* deger karti */
-.stats{
+.stats {
     padding: 3rem 0;
     background: #1a237e;
 }
@@ -156,21 +156,21 @@ body {
     margin-top: 1rem;
 }
 
-.stats-card{
+.stats-card {
     padding: 2rem;
     border-radius: 15px;
     text-align: center;
     transition: transform 0.3s ease;
 }
 
-.stats-stat {  
+.stats-stat {
     font-size: 2rem;
     font-weight: bold;
     margin-bottom: 0.5rem;
-    color: #ffffff;  
+    color: #ffffff;
 }
 
-.stats-item {  
+.stats-item {
     font-size: 1.6rem;
     color: #ffffff;
     font-weight: 500;
@@ -222,24 +222,24 @@ body {
     .hero-content h1 {
         font-size: 2.5rem;
     }
-    
+
     .hero-content p {
         font-size: 1.1rem;
     }
-    
+
     .hero-buttons {
         flex-direction: column;
         align-items: center;
     }
-    
+
     .features-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .btn {
         padding: 0.8rem 1.5rem;
         font-size: 1rem;
@@ -250,11 +250,11 @@ body {
     .hero-content h1 {
         font-size: 2rem;
     }
-    
+
     .stats-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .container {
         padding: 0 15px;
     }

@@ -1,27 +1,155 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Kutuphane Sistemi - Panel</title>
-        <link rel="stylesheet" href="style.css">
-    </head>
-    <body>
-        <header class="header">
-            <div class="container">
-                <h1 class="logo">
-                    <img src="images/ktulogo.png" alt="ktu" class="logo-img">
-                     Kütüphane Sistemi
-                </h1>   
-                <nav class="nav">
-                    <a href="index.html" class="nav-link">Panel</a>
-                    <a href="kitaplar.html" class="nav-link">Kitaplar</a>
-                    <a href="uyeler.html" class="nav-link">Üyeler</a>
-                    <a href="islemler.html" class="nav-link active">İşlemler</a>
-                </nav>
-                <div class="search-box">
-                    <input type="text" placeholder="Kitapları veya üyeleri ara" class="search-input">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kutuphane Sistemi - Panel</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">
+                <img src="images/ktulogo.png" alt="ktu" class="logo-img">
+                Kütüphane Sistemi
+            </h1>
+            <nav class="nav">
+                <a href="index.html" class="nav-link">Panel</a>
+                <a href="kitaplar.html" class="nav-link">Kitaplar</a>
+                <a href="uyeler.html" class="nav-link">Üyeler</a>
+                <a href="islemler.html" class="nav-link active">İşlemler</a>
+            </nav>
+            <div class="search-box">
+                <input type="text" placeholder="Kitapları veya üyeleri ara" class="search-input">
+            </div>
+        </div>
+    </header>
+    <main class="main">
+        <div class="container">
+            <div class="page-header">
+                <h2>İşlem Yönetimi</h2>
+            </div>
+            
+            <div class="transaction-stats">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">0</div>
+                        <div class="stat-label">Toplam İşlem</div>
+                    </div>
+                    <div class="stat-card borrowed">
+                        <div class="stat-number">0</div>
+                        <div class="stat-label">Ödünç Verilen</div>
+                    </div>
+                    <div class="stat-card available">
+                        <div class="stat-number">0</div>
+                        <div class="stat-label">İade Edilen</div>
+                    </div>
+                    <div class="stat-card overdue">
+                        <div class="stat-number">0</div>
+                        <div class="stat-label">Geciken</div>
+                    </div>
                 </div>
             </div>
-        </header>
+            
+            <div class="transaction-table-section">
+                <div class="table-header">
+                    <h3>İşlem Listesi</h3>
+                    <div class="table-controls">
+                        <input type="text" placeholder="İşlem ara..." class="search-table">
+                        <select class="filter-select">
+                            <option value="">Tüm İşlemler</option>
+                            <option value="odunc">Ödünç Verilen</option>
+                            <option value="iade">İade Edilen</option>
+                            <option value="geciken">Geciken</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="transaction-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>İşlem ID</th>
+                                <th>Üye ID</th>
+                                <th>Üye Adı</th>
+                                <th>Kitap ID</th>
+                                <th>İşlem Türü</th>
+                                <th>Alım Tarihi</th>
+                                <th>İade Tarihi</th>
+                                <th>Durum</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>25001</td>
+                                <td>2025001</td>
+                                <td>A</td>
+                                <td>A</td>
+                                <td>Ödünç</td>
+                                <td>10.10.2024</td>
+                                <td>24.10.2024</td>
+                                <td><span class="status borrowed-out">Ödünç</span></td>
+                                <td>
+                                    <button class="btn-edit">İade Al</button>
+                                    <button class="btn-delete">İptal</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>25002</td>
+                                <td>2025002</td>
+                                <td>B</td>
+                                <td>B</td>
+                                <td>İade</td>
+                                <td>05.10.2024</td>
+                                <td>11.10.2024</td>
+                                <td><span class="status returned">İade</span></td>
+                                <td>
+                                    <button class="btn-edit">Detay</button>
+                                    <button class="btn-delete">Sil</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>25003</td>
+                                <td>2025004</td>
+                                <td>D</td>
+                                <td>D</td>
+                                <td>Ödünç</td>
+                                <td>28.09.2024</td>
+                                <td>12.10.2024</td>
+                                <td><span class="status overdue">Geciken</span></td>
+                                <td>
+                                    <button class="btn-edit">Hatırlat</button>
+                                    <button class="btn-delete">İptal</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>25004</td>
+                                <td>2025003</td>
+                                <td>Prof. Dr. C</td>
+                                <td>C</td>
+                                <td>Rezerve</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td><span class="status pending">Bekliyor</span></td>
+                                <td>
+                                    <button class="btn-edit">Onayla</button>
+                                    <button class="btn-delete">Reddet</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2025 Kütüphane Projesi.</p>
+        <a href="mailto:458364@ogr.ktu.edu.tr">458364@ogr.ktu.edu.tr</a>
+        <br>
+        <a href="anasyafa.html">Anasayfa</a>
+    </footer>
+
 </html>

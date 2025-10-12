@@ -1,40 +1,47 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Kutuphane Sistemi - Panel</title>
-        <link rel="stylesheet" href="style.css">
-    </head>
-    <body>
-        <div class="login-container">
-            <div class="login-card">
-        <div class="login-header">
-            <img src="images/ktulogo.png" alt="KTU Logo" class="login-logo">
-            <h2>Kütüphane Sistemi</h2>
-            <p>Giriş Yapın</p>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kutuphane Sistemi - Panel</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="images/ktulogo.png" alt="KTU Logo" class="login-logo">
+                <h2>Kütüphane Sistemi</h2>
+                <p>Giriş Yapın</p>
+            </div>
+
+            <form class="login-form">
+                <div class="form-group">
+                    <input type="text" placeholder="Kullanıcı Adınız">
+                </div>
+                <div class="form-group">
+                    <input type="email" placeholder="E-mail adresiniz" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" placeholder="Şifreniz" required>
+                </div>
+                <div class="form-group">
+                    <select name="role" class="role-select" required>
+                        <option value="" disabled selected>Giriş türünü seçin</option>
+                        <option value="user">Üye Girişi</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="login-col">
+                    <button type="submit" class="login-btn">Giriş Yap</button>
+                    <button type="button" class="register-btn">Kayıt Ol</button>
+                </div>
+
+            </form>
         </div>
-        
-        <form class="login-form">
-            <div class="form-group">
-                <input type="text" placeholder="Kullanıcı Adınız">
-            </div>
-            <div class="form-group">
-                <input type="email" placeholder="E-mail adresiniz" required>
-            </div>
-            <div class="form-group">
-                <input type="password" placeholder="Şifreniz" required>
-            </div>
-            <div class="form-group">
-                <select name="role" class="role-select" required>
-                    <option value="" disabled selected>Giriş türünü seçin</option>
-                    <option value="user">Üye Girişi</option>
-                    <option value="admin">Admin</option>
-                </select>
-            </div>
-            <button type="submit" class="login-btn">Giriş Yap</button>
-        </form>
     </div>
-        </div>
-    </body>
+</body>
+
 </html>
