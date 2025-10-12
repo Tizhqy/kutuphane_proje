@@ -1,27 +1,151 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Kutuphane Sistemi - Panel</title>
-        <link rel="stylesheet" href="style.css">
-    </head>
-    <body>
-        <header class="header">
-            <div class="container">
-                <h1 class="logo">
-                    <img src="images/ktulogo.png" alt="ktu" class="logo-img">
-                     Kütüphane Sistemi
-                </h1>   
-                <nav class="nav">
-                    <a href="index.html" class="nav-link">Panel</a>
-                    <a href="kitaplar.html" class="nav-link">Kitaplar</a>
-                    <a href="uyeler.html" class="nav-link active">Üyeler</a>
-                    <a href="islemler.html" class="nav-link">İşlemler</a>
-                </nav>
-                <div class="search-box">
-                    <input type="text" placeholder="Kitapları veya üyeleri ara" class="search-input">
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kutuphane Sistemi - Panel</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">
+                <img src="images/ktulogo.png" alt="ktu" class="logo-img">
+                Kütüphane Sistemi
+            </h1>
+            <nav class="nav">
+                <a href="index.html" class="nav-link">Panel</a>
+                <a href="kitaplar.html" class="nav-link">Kitaplar</a>
+                <a href="uyeler.html" class="nav-link active">Üyeler</a>
+                <a href="islemler.html" class="nav-link">İşlemler</a>
+            </nav>
+            <div class="search-box">
+                <input type="text" placeholder="Kitapları veya üyeleri ara" class="search-input">
+            </div>
+        </div>
+    </header>
+    <main class="main">
+        <div class="container">
+            <div class="page-header">
+                <h2>Üye Yönetimi</h2>
+                <button class="k-add">+ Yeni Üye Ekle</button>
+            </div>
+            <div class="user-content">
+                <div class="user-stats">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">0</div>
+                            <div class="stat-label">Toplam Üye</div>
+                        </div>
+                        <div class="stat-card available">
+                            <div class="stat-number">0</div>
+                            <div class="stat-label">Aktif Üye</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">0</div>
+                            <div class="stat-label">Yeni Üye</div>
+                        </div>
+                        <div class="stat-card overdue">
+                            <div class="stat-number">0</div>
+                            <div class="stat-label">Geciken Üye</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="user-table-section">
+                    <div class="table-header">
+                        <h3>Üye Listesi</h3>
+                        <div class="table-controls">
+                            <input type="text" placeholder="Üye ara..." class="search-table">
+                            <select class="filter-select">
+                                <option value="">Tüm Üyeler</option>
+                                <option value="ogrenci">Öğrenciler</option>
+                                <option value="personel">Personel</option>
+                                <option value="akademisyen">Akademisyenler</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="user-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Üye ID</th>
+                                    <th>Ad Soyad</th>
+                                    <th>E-mail</th>
+                                    <th>Telefon</th>
+                                    <th>Üye Türü</th>
+                                    <th>Kayıt Tarihi</th>
+                                    <th>Durum</th>
+                                    <th>İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>2025001</td>
+                                    <td>A</td>
+                                    <td>A@ogr.ktu.edu.tr</td>
+                                    <td>0532 123 4567</td>
+                                    <td>👨‍🎓 Öğrenci</td>
+                                    <td>15.09.2024</td>
+                                    <td><span class="status active">Aktif</span></td>
+                                    <td>
+                                        <button class="btn-edit">Düzenle</button>
+                                        <button class="btn-delete">Sil</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>2025002</td>
+                                    <td>B</td>
+                                    <td>B@ktu.edu.tr</td>
+                                    <td>0541 987 6543</td>
+                                    <td>👨‍💼 Personel</td>
+                                    <td>20.08.2024</td>
+                                    <td><span class="status active">Aktif</span></td>
+                                    <td>
+                                        <button class="btn-edit">Düzenle</button>
+                                        <button class="btn-delete">Sil</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>2025003</td>
+                                    <td>Prof. Dr. C</td>
+                                    <td>C@ktu.edu.tr</td>
+                                    <td>0505 111 2233</td>
+                                    <td>👨‍🏫 Akademisyen</td>
+                                    <td>10.07.2024</td>
+                                    <td><span class="status active">Aktif</span></td>
+                                    <td>
+                                        <button class="btn-edit">Düzenle</button>
+                                        <button class="btn-delete">Sil</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>2025004</td>
+                                    <td>D</td>
+                                    <td>D@ogr.ktu.edu.tr</td>
+                                    <td>0555 444 3322</td>
+                                    <td>👨‍🎓 Öğrenci</td>
+                                    <td>05.10.2024</td>
+                                    <td><span class="status overdue">Geciken</span></td>
+                                    <td>
+                                        <button class="btn-edit">Düzenle</button>
+                                        <button class="btn-delete">Sil</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </header>
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2025 Kütüphane Projesi.</p>
+        <a href="mailto:458364@ogr.ktu.edu.tr">458364@ogr.ktu.edu.tr</a>
+        <br>
+        <a href="anasyafa.html">Anasayfa</a>
+    </footer>
+
 </html>
