@@ -148,15 +148,6 @@ php -S localhost:8000
 
 ---
 
-## 🤝 Katkıda Bulunma
-
-### **Geliştirme Süreci**
-1. **Fork** edin ve **clone** yapın
-2. **Feature branch** oluşturun: `git checkout -b feature/yeni-ozellik`
-3. **Değişikliklerinizi commit** edin: `git commit -m 'Yeni özellik eklendi'`
-4. **Branch'i push** edin: `git push origin feature/yeni-ozellik`
-5. **Pull Request** oluşturun
-
 ### **Kod Standartları**
 - **HTML**: Semantic yapı, accessibility
 - **CSS**: BEM metodolojisi, mobile-first
