@@ -161,8 +161,7 @@ php -S localhost:8000
 ![GitHub stars](https://img.shields.io/github/stars/Tizhqy/kutuphane_proje?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/Tizhqy/kutuphane_proje?style=social)
 ![GitHub issues](https://img.shields.io/github/issues/Tizhqy/kutuphane_proje)
-![GitHub license](https://img.shields.io/github/license/Tizhqy/kutuphane_proje)
 
 **Son Güncelleme**: Ekim 2025  
-**Sürüm**: v1.0  
+**Sürüm**: v0.15
 **Durum**: Aktif Geliştirme 🚀
