@@ -12,15 +12,27 @@
 <body>
     <header class="user-header">
         <div class="container">
-            <h1 class="logo">
-                <img src="images/ktulogo.png" alt="ktu" class="logo-img">
-                Kütüphane Sistemi
-            </h1>
+            <div class="header-top">
+                <h1 class="logo">
+                    <img src="images/ktulogo.png" alt="ktu" class="logo-img">
+                    Kütüphane Sistemi
+                </h1>
+                <div class="user-info">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" placeholder="Kitap ara..." class="search-input">
+                    </div>
+                    <div class="user-profile">
+                        <i class="fas fa-user-circle"></i>
+                        <span>Öğrenci</span>
+                    </div>
+                </div>
+            </div>
             <nav class="nav">
-                <a href="user-dashboard.html" class="nav-link active">
+                <a href="user-dashboard.html" class="nav-link">
                     <i class="fas fa-home"></i> Anasayfa
                 </a>
-                <a href="user-kitaplar.html" class="nav-link">
+                <a href="user-kitaplar.html" class="nav-link active">
                     <i class="fas fa-book"></i> Kitap Kataloğu
                 </a>
                 <a href="user-kitaplarim.html" class="nav-link">
@@ -33,13 +45,147 @@
                     <i class="fas fa-user"></i> Profilim
                 </a>
             </nav>
-            <div class="search-box">
-                <i class="fas fa-search search-icon"></i>
-                <input type="text" placeholder="Kitap ara..." class="search-input">
-            </div>
         </div>
     </header>
-    <main>
+    <main class="main">
+        <div class="container">
+            <div class="page-header">
+                <h2><i class="fas fa-book"></i> Kitap Kataloğu</h2>
+                <div class="catalog-search">
+                    <input type="text" placeholder="Kitap, yazar veya ISBN ara..." class="catalog-search-input">
+                    <button class="search-btn"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
 
+            <div class="catalog-content">
+                <div class="filters-sidebar">
+                    <h3><i class="fas fa-filter"></i> Filtreler</h3>
+
+                    <div class="filter-group">
+                        <h4>Kategori</h4>
+                        <div class="filter-options">
+                            <label><input type="checkbox" checked> Tüm Kategoriler</label>
+                            <label><input type="checkbox"> Bilgisayar Bilimleri</label>
+                            <label><input type="checkbox"> Matematik</label>
+                            <label><input type="checkbox"> Fizik</label>
+                            <label><input type="checkbox"> Edebiyat</label>
+                            <label><input type="checkbox"> Tarih</label>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <h4>Durum</h4>
+                        <div class="filter-options">
+                            <label><input type="radio" name="status" checked> Tümü</label>
+                            <label><input type="radio" name="status"> Müsait</label>
+                            <label><input type="radio" name="status"> Ödünç Verilmiş</label>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <h4>Yıl</h4>
+                        <select class="filter-select">
+                            <option>Tüm Yıllar</option>
+                            <option>2024</option>
+                            <option>2023</option>
+                            <option>2022</option>
+                            <option>2021</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="books-grid">
+                    <div class="book-card">
+                        <div class="book-image">
+                            <i class="fas fa-book book-placeholder"></i>
+                        </div>
+                        <div class="book-info">
+                            <h4 class="book-title">A</h4>
+                            <p class="book-author">A</p>
+                            <p class="book-category">Bilgisayar Bilimleri</p>
+                            <span class="book-status available">Müsait</span>
+                        </div>
+                        <div class="book-actions">
+                            <button class="btn-reserve">Rezerve Et</button>
+                            <button class="btn-details">Detaylar</button>
+                        </div>
+                    </div>
+
+                    <div class="book-card">
+                        <div class="book-image">
+                            <i class="fas fa-book book-placeholder"></i>
+                        </div>
+                        <div class="book-info">
+                            <h4 class="book-title">B</h4>
+                            <p class="book-author">B</p>
+                            <p class="book-category">Bilgisayar Bilimleri</p>
+                            <span class="book-status borrowed">Ödünç Verilmiş</span>
+                        </div>
+                        <div class="book-actions">
+                            <button class="btn-reserve" disabled>Rezerve Et</button>
+                            <button class="btn-details">Detaylar</button>
+                        </div>
+                    </div>
+
+                    <div class="book-card">
+                        <div class="book-image">
+                            <i class="fas fa-book book-placeholder"></i>
+                        </div>
+                        <div class="book-info">
+                            <h4 class="book-title">C</h4>
+                            <p class="book-author">C</p>
+                            <p class="book-category">Bilgisayar Bilimleri</p>
+                            <span class="book-status available">Müsait</span>
+                        </div>
+                        <div class="book-actions">
+                            <button class="btn-reserve">Rezerve Et</button>
+                            <button class="btn-details">Detaylar</button>
+                        </div>
+                    </div>
+
+                    <div class="book-card">
+                        <div class="book-image">
+                            <i class="fas fa-book book-placeholder"></i>
+                        </div>
+                        <div class="book-info">
+                            <h4 class="book-title">D</h4>
+                            <p class="book-author">D</p>
+                            <p class="book-category">Matematik</p>
+                            <span class="book-status available">Müsait</span>
+                        </div>
+                        <div class="book-actions">
+                            <button class="btn-reserve">Rezerve Et</button>
+                            <button class="btn-details">Detaylar</button>
+                        </div>
+                    </div>
+
+                    <div class="book-card">
+                        <div class="book-image">
+                            <i class="fas fa-book book-placeholder"></i>
+                        </div>
+                        <div class="book-info">
+                            <h4 class="book-title">E</h4>
+                            <p class="book-author">E</p>
+                            <p class="book-category">Edebiyat</p>
+                            <span class="book-status borrowed">Ödünç Verilmiş</span>
+                        </div>
+                        <div class="book-actions">
+                            <button class="btn-reserve" disabled>Rezerve Et</button>
+                            <button class="btn-details">Detaylar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
+
+    <footer>
+        <p>&copy; 2025 Kütüphane Projesi.</p>
+        <a href="mailto:458364@ogr.ktu.edu.tr">458364@ogr.ktu.edu.tr</a>
+        <br>
+        <a href="anasyafa.html">Anasayfa</a>
+    </footer>
+
 </body>
+
+</html>
