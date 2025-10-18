@@ -156,24 +156,6 @@ php -S localhost:8000
 
 ---
 
-## 📋 Lisans & İletişim
-
-### **📄 Lisans**
-Bu proje **MIT Lisansı** altında lisanslanmıştır. Detaylar için `LICENSE` dosyasına bakınız.
-
-### **👨‍💻 Geliştirici**
-- **Ad**: Kütüphane Sistemi Ekibi
-- **Email**: [458364@ogr.ktu.edu.tr](mailto:458364@ogr.ktu.edu.tr)
-- **Üniversite**: Karadeniz Teknik Üniversitesi
-- **GitHub**: [@Tizhqy](https://github.com/Tizhqy)
-
-### **🏫 Kurum**
-**Karadeniz Teknik Üniversitesi**  
-Bilgisayar Mühendisliği Bölümü  
-Trabzon, Türkiye
-
----
-
 ## 📊 Proje İstatistikleri
 
 ![GitHub stars](https://img.shields.io/github/stars/Tizhqy/kutuphane_proje?style=social)
