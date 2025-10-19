@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil</title>
+    <link rel="stylesheet" href="ustyle.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <header class="user-header">
+        <div class="container">
+            <div class="header-top">
+                <h1 class="logo">
+                    <img src="images/ktulogo.png" alt="ktu" class="logo-img">
+                    Kütüphane Sistemi
+                </h1>
+                <div class="user-info">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" placeholder="Kitap ara..." class="search-input">
+                    </div>
+                    <div class="user-profile">
+                        <i class="fas fa-user-circle"></i>
+                        <span>Öğrenci</span>
+                    </div>
+                </div>
+            </div>
+            <nav class="nav">
+                <a href="user-dashboard.html" class="nav-link">
+                    <i class="fas fa-home"></i> Anasayfa
+                </a>
+                <a href="user-kitaplar.html" class="nav-link ">
+                    <i class="fas fa-book"></i> Kitap Kataloğu
+                </a>
+                <a href="user-kitaplarim.html" class="nav-link">
+                    <i class="fas fa-bookmark"></i> Kitaplarım
+                </a>
+                <a href="user-reservations.html" class="nav-link">
+                    <i class="fas fa-calendar-check"></i> Rezervasyonlarım
+                </a>
+                <a href="user-profile.html" class="nav-link active">
+                    <i class="fas fa-user"></i> Profilim
+                </a>
+            </nav>
+        </div>
+    </header>
+    <main class="main">
+        <div class="container">
+            <div class="profile-header">
+                <h2><i class="fas fa-user-edit"></i> Profil Ayarları</h2>
+            </div>
+            
+            <div class="user-profile-content">
+                <div class="profile-card">
+                    <div class="profile-photo">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="profile-info">
+                        <h2 class="profile-name">A</h2>
+                        <h3 class="profile-role">Öğrenci</h3>
+                        <p class="profile-id">Öğrenci No: 458364</p>
+                    </div>
+                    <div class="profile-actions">
+                        <button class="btn-edit-photo">
+                            <i class="fas fa-camera"></i> Fotoğraf Değiştir
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h3><i class="fas fa-cog"></i> Kişisel Bilgiler</h3>
+                    
+                    <div class="form-groups">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Ad Soyad</label>
+                                <input type="text" value="Ahmet Yılmaz" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Öğrenci Numarası</label>
+                                <input type="text" value="458364" class="form-input" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>E-mail</label>
+                                <input type="email" value="" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Telefon</label>
+                                <input type="tel" value="" class="form-input">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Bölüm</label>
+                                <input type="text" value="" class="form-input" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Kayıt Tarihi</label>
+                                <input type="text" value="19.10.2025" class="form-input" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button class="btn-save">
+                                <i class="fas fa-save"></i> Değişiklikleri Kaydet
+                            </button>
+                            <button class="btn-cancel">
+                                <i class="fas fa-times"></i> İptal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2025 Kütüphane Projesi.</p>
+        <a href="mailto:458364@ogr.ktu.edu.tr">458364@ogr.ktu.edu.tr</a>
+        <br>
+        <a href="anasyafa.html">Anasayfa</a>
+    </footer>
+</body>
+
+</html>
