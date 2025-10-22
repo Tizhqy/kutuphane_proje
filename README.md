@@ -46,6 +46,18 @@ Hem **yönetici** hem de **kullanıcı** arayüzleri ile kitap, üye ve ödünç
 - **Responsive**: Mobile-first yaklaşımı
 - **Erişilebilirlik**: WCAG standartlarına uygun
 
+### **Veritabanı Yapısı**
+- **MySQL**: İlişkisel veritabanı
+- **7 Ana Tablo**: Kullanıcı, rol ve yetki yönetimi
+- **Güvenlik**: Şifreli authentication sistemi
+- **Performans**: İndekslenmiş sorgular
+
+## 📊 **Veritabanı ER Diagramı**
+
+![Veritabanı ER Diagramı](images/er-diagram.svg)
+
+*Yukarıdaki diagram, sistemin tüm tablo ilişkilerini ve veri yapısını göstermektedir.*
+
 ---
 
 ## � Proje Dosya Yapısı

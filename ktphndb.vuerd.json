@@ -4,9 +4,9 @@
   "settings": {
     "width": 2000,
     "height": 2000,
-    "scrollTop": -404.1125,
-    "scrollLeft": -352.3796,
-    "zoomLevel": 0.55,
+    "scrollTop": -528.536,
+    "scrollLeft": -365.4805,
+    "zoomLevel": 0.43,
     "show": 511,
     "database": 4,
     "databaseName": "kutuphaneDB",
@@ -98,8 +98,6 @@
         "columnIds": [
           "AdjZZyG3DzKPExM9u4lQa",
           "iixS3uFyE5tTOU8DVcYz8",
-          "4TX2QabYIIwh83m2bgl31",
-          "oxCasHMLzShD5yxbCNraf",
           "jNDI5useILHOLNz_OEe8A",
           "c2PIL77m6rnCU5u3dspkB"
         ],
@@ -122,7 +120,7 @@
           "color": ""
         },
         "meta": {
-          "updateAt": 1761142531979,
+          "updateAt": 1761143036696,
           "createAt": 1761131024877
         }
       },
@@ -229,11 +227,8 @@
           "gI3yiGcIGRaNHTdNArNjC",
           "EE1sEyzI_z8hm9e2PitQy",
           "oT57U5bwkwwMfd-6X8aYx",
-          "ZUY2Z0PM9ZZsj-hOSYQyB",
-          "KgBdZSYJYuSJMF1D3NaxH",
           "jmN_9-7dhZRuJctdiXqgD",
           "_yOFesqav5edGersvLbDd",
-          "3OX--eyztN6O7-gB71dRc",
           "Wkp7ZffeGEVnWl91CqQ2s",
           "8hANWLxR64L3r55bRjhs2"
         ],
@@ -263,7 +258,7 @@
           "color": ""
         },
         "meta": {
-          "updateAt": 1761142531979,
+          "updateAt": 1761143317186,
           "createAt": 1761138656807
         }
       },
@@ -1686,7 +1681,7 @@
             "jNDI5useILHOLNz_OEe8A"
           ],
           "x": 815.9474,
-          "y": 86.4202,
+          "y": 74.4202,
           "direction": 1
         },
         "meta": {
@@ -1714,7 +1709,7 @@
             "c2PIL77m6rnCU5u3dspkB"
           ],
           "x": 815.9474,
-          "y": 186.4202,
+          "y": 150.4202,
           "direction": 1
         },
         "meta": {
@@ -1798,7 +1793,7 @@
             "Wkp7ZffeGEVnWl91CqQ2s"
           ],
           "x": 817.1061,
-          "y": 343.1562,
+          "y": 325.1562,
           "direction": 1
         },
         "meta": {
@@ -1826,7 +1821,7 @@
             "8hANWLxR64L3r55bRjhs2"
           ],
           "x": 817.1061,
-          "y": 503.1562,
+          "y": 449.1562,
           "direction": 1
         },
         "meta": {
