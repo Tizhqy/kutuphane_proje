@@ -49,12 +49,12 @@ Hem **yönetici** hem de **kullanıcı** arayüzleri ile kitap, üye ve ödünç
 ### **Veritabanı Yapısı**
 - **MySQL**: İlişkisel veritabanı
 - **7 Ana Tablo**: Kullanıcı, rol ve yetki yönetimi
-- **Güvenlik**: Şifreli authentication sistemi
-- **Performans**: İndekslenmiş sorgular
+- **Güvenlik**: Şifreli kullanıcı girişi
+- **Performans**: Hızlı arama ve raporlama
 
 ## 📊 **Veritabanı ER Diagramı**
 
-![Veritabanı ER Diagramı](images/er-diagram.svg)
+![Veritabanı ER Diagramı](./images/db.svg)
 
 *Yukarıdaki diagram, sistemin tüm tablo ilişkilerini ve veri yapısını göstermektedir.*
 
