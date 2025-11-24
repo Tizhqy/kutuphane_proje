@@ -96,6 +96,7 @@ Proje, statik bir arayüz tasarımından dinamik veri yönetimine geçiş yapmı
         └── appsettings.json              # MySQL bağlantı ayarları
 ```
 
+---
 
 ## 🛠️ Geliştirilecek Özellikler
 
