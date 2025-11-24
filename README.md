@@ -94,7 +94,7 @@ Proje, statik bir arayüz tasarımından dinamik veri yönetimine geçiş yapmı
         │   └── KitapDurum.cs             # Enum tanımları
         ├── Program.cs                    # API başlangıç ayarları (CORS, Routing)
         └── appsettings.json              # MySQL bağlantı ayarları
----
+```
 
 
 ## 🛠️ Geliştirilecek Özellikler
