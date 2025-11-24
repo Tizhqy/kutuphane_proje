@@ -99,7 +99,7 @@ Proje, statik bir arayüz tasarımından dinamik veri yönetimine geçiş yapmı
 
 ## 🛠️ Geliştirilecek Özellikler
 
-###(Yakında)
+### (Yakında)
 
 * JWT kimlik doğrulama
 * E-posta bildirim sistemi
