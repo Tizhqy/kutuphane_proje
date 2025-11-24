@@ -7,7 +7,7 @@ document.getElementById('loginForm').addEventListener('submit', function (e) {
     validateForm(email, password);
 });
 
-// Helper: localStorage'tan kullanıcıları al
+// localdan kullanici
 function getStoredUsers() {
     try {
         const raw = localStorage.getItem('users');
@@ -17,7 +17,7 @@ function getStoredUsers() {
     }
 }
 
-// Helper: kullanıcıyı kaydet
+// kayit
 function storeUser(user) {
     const users = getStoredUsers();
     users.push(user);
@@ -25,31 +25,29 @@ function storeUser(user) {
 }
 
 function validateForm(email, password) {
-    // Email boş mu kontrol et
     if (email === '') {
         alert('Email boş olamaz!');
         return false;
     }
     
-    // Email formatı doğru mu kontrol et
     if (!email.includes('@') || !email.includes('.')) {
         alert('Geçerli bir email girin! (örnek: ad@ktu.edu.tr)');
         return false;
     }
 
-    // Şifre boş mu kontrol et
+
     if (password === '') {
         alert('Şifre boş olamaz!');
         return false;
     }
     
-    // Şifre uzunluğu kontrol et
+
     if (password.length < 6) {
         alert('Şifre en az 6 karakter olmalı!');
         return false;
     }
 
-    // LocalStorage üzerindeki kullanıcılarla eşleştir
+
     const users = getStoredUsers();
     const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
 
@@ -60,7 +58,6 @@ function validateForm(email, password) {
 
     alert('✅ Giriş başarılı! Yönlendiriliyor...');
 
-    // Rol bazlı yönlendirme (kısa mantık): staff -> admin paneli, diğerleri user dashboard
     if (user.userType === 'staff') {
         window.location.href = 'index.html';
     } else {
@@ -69,22 +66,21 @@ function validateForm(email, password) {
     return true;
 }
 
-// FORM DEĞİŞTİRME FONKSİYONLARI
-// Kayıt formuna geç
+// kayit formuna gec
 document.querySelector('.register-btn').addEventListener('click', function() {
     document.getElementById('loginForm').style.display = 'none';
     document.getElementById('registerForm').style.display = 'block';
     document.getElementById('formTitle').textContent = 'Kayıt Olun';
 });
 
-// Giriş formuna geri dön
+// giris formu
 document.getElementById('backToLogin').addEventListener('click', function() {
     document.getElementById('registerForm').style.display = 'none';
     document.getElementById('loginForm').style.display = 'block';
     document.getElementById('formTitle').textContent = 'Giriş Yapın';
 });
 
-// KAYIT FORMU VALİDASYONU
+// kayit validasyonu
 document.getElementById('registerForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -99,50 +95,50 @@ document.getElementById('registerForm').addEventListener('submit', function(e) {
 });
 
 function validateRegisterForm(fullname, email, phone, password, confirmPassword, userType) {
-    // Ad soyad kontrolü
+    // Ad soyad
     if (fullname === '' || fullname.length < 3) {
         alert('Ad soyad en az 3 karakter olmalı!');
         return false;
     }
 
-    // Email kontrolü
+    // Email 
     if (email === '' || !email.includes('@') || !email.includes('.')) {
         alert('Geçerli bir email girin!');
         return false;
     }
 
-    // Duplication kontrolü
+    // kopya 
     const users = getStoredUsers();
     if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
         alert('Bu email zaten kayıtlı. Lütfen başka bir email ile kayıt olun veya giriş yapın.');
         return false;
     }
 
-    // Telefon kontrolü
+    // Telefon 
     if (phone === '' || phone.replace(/\D/g, '').length < 10) {
         alert('Geçerli bir telefon numarası girin!');
         return false;
     }
 
-    // Şifre kontrolü
+    // sifre 
     if (password.length < 6 || password.length > 40) {
         alert('Şifre 6-40 karakter arasında olmalı!');
         return false;
     }
 
-    // Şifre eşleşme kontrolü
+    // sifre 
     if (password !== confirmPassword) {
         alert('Şifreler eşleşmiyor!');
         return false;
     }
 
-    // Kullanıcı tipi kontrolü
+    // kullanici 
     if (userType === '' || userType == null) {
         alert('Kullanıcı tipini seçin!');
         return false;
     }
 
-    // Kullanıcı objesi oluştur ve localStorage'a kaydet
+    //  obje olsutur
     const newUser = {
         fullname: fullname,
         email: email.toLowerCase(),
@@ -156,7 +152,7 @@ function validateRegisterForm(fullname, email, phone, password, confirmPassword,
     storeUser(newUser);
     alert('✅ Kayıt başarılı! Artık giriş yapabilirsiniz.');
 
-    // Kayıt başarılı, giriş formuna dön
+
     document.getElementById('registerForm').reset();
     document.getElementById('registerForm').style.display = 'none';
     document.getElementById('loginForm').style.display = 'block';
@@ -164,8 +160,7 @@ function validateRegisterForm(fullname, email, phone, password, confirmPassword,
     return true;
 }
 
-// RENK SİSTEMİ - GERÇEK ZAMANLI KONTROL
-// Şifre renk kontrolü (Giriş formu)
+// renk
 document.getElementById('password').addEventListener('input', function() {
     let password = this.value;
     
@@ -181,7 +176,7 @@ document.getElementById('password').addEventListener('input', function() {
     }
 });
 
-// Email renk kontrolü (Giriş formu)
+// mail
 document.getElementById('email').addEventListener('input', function() {
     let email = this.value;
     
@@ -197,7 +192,7 @@ document.getElementById('email').addEventListener('input', function() {
     }
 });
 
-// Kayıt formu şifre renk kontrolü
+// sifre
 document.getElementById('reg_password').addEventListener('input', function() {
     let password = this.value;
     
@@ -213,7 +208,7 @@ document.getElementById('reg_password').addEventListener('input', function() {
     }
 });
 
-// Şifre tekrar kontrolü
+
 document.getElementById('confirm_password').addEventListener('input', function() {
     let password = document.getElementById('reg_password').value;
     let confirmPassword = this.value;
@@ -230,7 +225,6 @@ document.getElementById('confirm_password').addEventListener('input', function()
     }
 });
 
-// İlk kullanım için örnek admin kullanıcısı ekle (eğer yoksa)
 (function initDefaultAdmin(){
     const users = getStoredUsers();
     const adminExists = users.some(u => u.email.toLowerCase() === 'admin@ktu.edu.tr');
