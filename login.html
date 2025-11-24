@@ -14,34 +14,59 @@
             <div class="login-header">
                 <img src="images/ktulogo.png" alt="KTU Logo" class="login-logo">
                 <h2>Kütüphane Sistemi</h2>
-                <p>Giriş Yapın</p>
+                <p id="formTitle">Giriş Yapın</p>
             </div>
 
-            <form class="login-form">
+            <form class="login-form" id="loginForm">
                 <div class="form-group">
-                    <input type="text" placeholder="Kullanıcı Adınız">
+                    <input type="email" placeholder="E-mail adresiniz" id="email" required>
                 </div>
                 <div class="form-group">
-                    <input type="email" placeholder="E-mail adresiniz" required>
-                </div>
-                <div class="form-group">
-                    <input type="password" placeholder="Şifreniz" required>
-                </div>
-                <div class="form-group">
-                    <select name="role" class="role-select" required>
-                        <option value="" disabled selected>Giriş türünü seçin</option>
-                        <option value="user">Üye Girişi</option>
-                        <option value="admin">Admin</option>
-                    </select>
+                    <input type="password" placeholder="Şifreniz" id="password" required>
                 </div>
                 <div class="login-col">
-                    <button type="submit" class="login-btn">Giriş Yap</button>
+                    <button type="submit" class="login-btn" id="loginBtn">Giriş Yap</button>
                     <button type="button" class="register-btn">Kayıt Ol</button>
                 </div>
 
             </form>
+
+            <form class="login-form" id="registerForm" style="display: none;">
+                <div class="form-group">
+                    <input type="text" placeholder="Ad Soyad" id="fullname" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" placeholder="E-mail adresiniz" id="reg_email" required>
+                </div>
+                <div class="form-group">
+                    <input type="tel" placeholder="Telefon (05XX XXX XX XX)" id="phone" required>
+                </div>
+                <div class="form-group">
+                    <input type="text" placeholder="Okul Numarası (isteğe bağlı)" id="student_number">
+                </div>
+                <!-- degisebilir -->
+                <div class="form-group"> 
+                    <select id="user_type" required>
+                        <option value="" disabled selected>Kullanıcı Tipi Seçin</option>
+                        <option value="student">Öğrenci</option>
+                        <option value="staff">Personel</option>
+                        <option value="academic">Akademisyen</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="password" placeholder="Şifre (6-40 karakter)" id="reg_password" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" placeholder="Şifre Tekrar" id="confirm_password" required>
+                </div>
+                <div class="login-col">
+                    <button type="submit" class="login-btn" id="registerBtn">Kayıt Ol</button>
+                    <button type="button" class="register-btn" id="backToLogin">Giriş Yap</button>
+                </div>
+            </form>
         </div>
     </div>
+    <script src="app.js"></script>
 </body>
 
 </html>

@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "KutuphaneApi", "KutuphaneApi", "{FA6AF86E-468B-E8A4-D038-8D3E802F6E1C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ktphnAPI", "KutuphaneApi\ktphnAPI\ktphnAPI.csproj", "{80DE5A5A-F59D-33B6-817A-8007C2194775}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{80DE5A5A-F59D-33B6-817A-8007C2194775}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80DE5A5A-F59D-33B6-817A-8007C2194775}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80DE5A5A-F59D-33B6-817A-8007C2194775}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80DE5A5A-F59D-33B6-817A-8007C2194775}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{80DE5A5A-F59D-33B6-817A-8007C2194775} = {FA6AF86E-468B-E8A4-D038-8D3E802F6E1C}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {815DD037-D616-4195-BBBD-0836BC7AB40E}
+	EndGlobalSection
+EndGlobal
