@@ -1,56 +1,65 @@
-# 📚 KTU Kütüphane Yönetim Sistemi
 
-Bu proje, **Karadeniz Teknik Üniversitesi (KTÜ)** için geliştirilmiş modern ve kapsamlı bir **dijital kütüphane yönetim sistemi**dir.
-Hem **yönetici** hem de **kullanıcı** arayüzleri ile kitap, üye ve ödünç işlemlerinin etkin bir şekilde yönetilebilmesini sağlar.
+---
+
+# 📚 KTU Kütüphane Yönetim Sistemi (Full-Stack)
+
+Bu proje, **Karadeniz Teknik Üniversitesi (KTÜ)** için geliştirilmiş, **.NET Core Web API** ve **MySQL** altyapısı ile güçlendirilmiş modern bir dijital kütüphane yönetim sistemidir.
+
+Proje, statik bir arayüz tasarımından dinamik veri yönetimine geçiş yapmış, Frontend (HTML/JS) ve Backend (C#) mimarisini başarıyla birleştirmiştir.
 
 ---
 
 ## 🎯 Proje Amacı
-- Kütüphane işlemlerinin dijitalleştirilmesi
-- Kitap ve üye yönetiminin optimize edilmesi
-- Kullanıcı dostu, modern web arayüzü sunması
-- Responsive tasarım ile her cihazda kullanılabilirlik
-- KTÜ öğrenci ve personeli için entegre kütüphane deneyimi
+
+* Kütüphane işlemlerinin dijitalleştirilmesi.
+* Kitap ve üye yönetiminin optimize edilmesi.
+* Kullanıcı dostu, modern web arayüzü sunulması.
+* Responsive tasarım ile her cihazda kullanılabilirlik.
+* KTÜ öğrenci ve personeli için entegre kütüphane deneyimi.
 
 ---
 
 ## ✨ Temel Özellikler
 
 ### 👨‍💼 Yönetici Paneli
-- **📊 Dashboard**: Gerçek zamanlı istatistikler ve özet bilgiler
-- **📚 Kitap Yönetimi**: Ekleme, düzenleme, silme ve listeleme
-- **👥 Üye Yönetimi**: Öğrenci, personel ve akademisyen kaydı
-- **📋 İşlem Takibi**: Ödünç alma, iade ve geciken kitaplar
-- **🔍 Gelişmiş Arama**: Filtreleme ve sıralama seçenekleri
+
+* **📊 Dashboard**: Gerçek zamanlı istatistikler ve özet bilgiler.
+* **📚 Kitap Yönetimi**: Veritabanı bağlantılı ekleme, silme ve listeleme.
+* **👥 Üye Yönetimi**: Öğrenci, personel ve akademisyen kaydı.
+* **🔍 Gelişmiş Arama**: Anlık kitap arama ve filtreleme.
 
 ### 👨‍🎓 Kullanıcı Arayüzü
-- **🏠 Kişisel Dashboard**: Ödünç alınan kitaplar ve durum takibi
-- **📖 Kitap Kataloğu**: Gelişmiş filtreleme ile kitap arama
-- **📑 Kitaplarım**: Mevcut ödünç alınan kitapların yönetimi
-- **📅 Rezervasyonlar**: Kitap rezervasyon sistemi
-- **👤 Profil Yönetimi**: Kişisel bilgi güncelleme
+
+* **🏠 Kişisel Dashboard**: Ödünç alınan kitaplar ve durum takibi.
+* **📖 Kitap Kataloğu**: Görsel kitap kartları ve durum (Mevcut/Ödünç) takibi.
+* **📑 Kitaplarım**: Mevcut ödünç alınan kitapların yönetimi.
+* **📅 Rezervasyonlar**: Kitap rezervasyon sistemi.
 
 ---
 
-## 🏗️ Teknik Yapı
+## 🏗️ Teknik Yapı (Tech Stack)
+
+### **Backend Teknolojileri**
+
+* **ASP.NET Core Web API (.NET 8.0)**: Modern, hızlı ve ölçeklenebilir API.
+* **Entity Framework Core**: ORM yapısı ile veritabanı işlemleri.
+* **MySQL**: İlişkisel veritabanı.
+* **REST API**: Frontend ile backend arasında JSON veri iletişimi.
+* **Swagger UI**: API test ve dokümantasyon arayüzü.
 
 ### **Frontend Teknolojileri**
-- **HTML5**: Modern semantik yapı
-- **CSS3**: Responsive tasarım ve animasyonlar
-- **JavaScript**: İnteraktif kullanıcı deneyimi
-- **Font Awesome**: Profesyonel ikon seti
+
+* **HTML5 & CSS3**: Modern semantik yapı ve Responsive tasarım.
+* **JavaScript (ES6+)**: Fetch API ile Backend iletişimi.
+* **Font Awesome**: Profesyonel ikon seti.
 
 ### **Tasarım Sistemi**
-- **Ana Renk**: #1a237e (KTÜ Mavi)
-- **Tasarım**: Material Design ilkeleri
-- **Responsive**: Mobile-first yaklaşımı
-- **Erişilebilirlik**: WCAG standartlarına uygun
 
-### **Veritabanı Yapısı**
-- **MySQL**: İlişkisel veritabanı
-- **7 Ana Tablo**: Kullanıcı, rol ve yetki yönetimi
-- **Güvenlik**: Şifreli kullanıcı girişi
-- **Performans**: Hızlı arama ve raporlama
+* **Ana Renk**: #1a237e (KTÜ Mavi)
+* **Tasarım**: Material Design ilkeleri.
+* **Responsive**: Mobile-first yaklaşımı.
+
+---
 
 ## 📊 **Veritabanı ER Diagramı**
 
@@ -59,112 +68,58 @@ Hem **yönetici** hem de **kullanıcı** arayüzleri ile kitap, üye ve ödünç
 *Yukarıdaki diagram, sistemin tüm tablo ilişkilerini ve veri yapısını göstermektedir.*
 
 ---
+## 🏗️ Proje Dosya Yapısı
 
-## � Proje Dosya Yapısı
-
-### **🎨 Ana Sayfa & Pazarlama**
-- `anasyafa.html` → Kütüphane tanıtım ve landing page
-- `anasayfa.css` → Ana sayfa özel stilleri
-
-### **�‍💼 Yönetici Paneli**
-- `index.html` → Admin dashboard (istatistikler)
-- `kitaplar.html` → Kitap yönetimi sayfası
-- `uyeler.html` → Üye yönetimi sayfası
-- `islemler.html` → İşlem takip sayfası
-- `style.css` → Admin paneli ana stylesheet
-
-### **�‍🎓 Kullanıcı Arayüzü**
-- `user-dashboard.html` → Kullanıcı ana paneli
-- `user-kitaplar.html` → Kitap kataloğu
-- `user-kitaplarim.html` → Kişisel kitap listesi
-- `user-reservations.html` → Rezervasyon yönetimi
-- `user-profile.html` → Profil sayfası
-- `ustyle.css` → Kullanıcı arayüzü stylesheet
-
-### **� Kimlik Doğrulama**
-- `login.html` → Giriş sayfası (admin/kullanıcı)
-
-### **🎨 Medya & Kaynaklar**
-- `images/` → Logo ve görseller  
-- `README.md` → Proje dokümantasyonu
-
+```text
+/kutuphane_projesi
+│
+├── /Frontend (Arayüz Dosyaları - Root)
+│   ├── index.html              # Admin Dashboard
+│   ├── kitaplar.html           # Kitap Yönetimi (Tablo Görünümü)
+│   ├── user-kitaplar.html      # Kullanıcı Kitap Kataloğu (Kart Görünümü)
+│   ├── kitaplar-backend.js     # Admin paneli API bağlantısı
+│   ├── ukitaplar-backend.js    # Kullanıcı paneli API bağlantısı
+│   ├── style.css               # Admin CSS
+│   ├── ustyle.css              # Kullanıcı CSS
+│   └── /images                 # Logo ve medya dosyaları
+│
+└── /KutuphaneApi (Backend - ASP.NET Core)
+    └── /ktphnAPI
+        ├── /Controllers
+        │   └── KitaplarController.cs     # API Uçları (Garson)
+        ├── /Data
+        │   └── AppDbContext.cs           # EF Core veritabanı bağlantısı
+        ├── /Models
+        │   ├── Kitap.cs                  # Veri model sınıfı
+        │   └── KitapDurum.cs             # Enum tanımları
+        ├── Program.cs                    # API başlangıç ayarları (CORS, Routing)
+        └── appsettings.json              # MySQL bağlantı ayarları
 ---
 
-## 🚀 Kurulum ve Çalıştırma
-
-### **Gereksinimler**
-- Modern web tarayıcı (Chrome, Firefox, Safari, Edge)
-- **VS Code** + **Live Server** eklentisi (önerilen)
-- Git (versiyon kontrolü için)
-
-### **Adım 1: Projeyi İndirin**
-```bash
-git clone https://github.com/Tizhqy/kutuphane_proje.git
-cd kutuphane_projesi
-```
-
-### **Adım 2: Geliştirme Sunucusunu Başlatın**
-1. **VS Code ile açın**: `code .`
-2. **Live Server eklentisini yükleyin**
-3. **Ana dosyalardan birine sağ tıklayın** → "Open with Live Server"
-
-### **Alternatif Çalıştırma Yöntemleri**
-```bash
-# Python ile basit sunucu
-python -m http.server 8000
-
-# Node.js ile
-npx serve .
-
-# PHP ile
-php -S localhost:8000
-```
-
----
-
-## 🌐 Sayfa Gezintisi
-
-### **📱 Kullanıcı Deneyimi**
-| Sayfa | URL | Açıklama |
-|-------|-----|----------|
-| 🏠 Ana Sayfa | `anasyafa.html` | Kütüphane tanıtım ve özellikler |
-| 🔐 Giriş | `login.html` | Admin/Kullanıcı girişi |
-| 👨‍🎓 Kullanıcı Dashboard | `user-dashboard.html` | Kişisel kitap yönetimi |
-| 📚 Kitap Kataloğu | `user-kitaplar.html` | Kitap arama ve rezervasyon |
-
-### **⚙️ Yönetici Paneli**
-| Sayfa | URL | Açıklama |
-|-------|-----|----------|
-| 📊 Admin Dashboard | `index.html` | İstatistikler ve genel bakış |
-| 📖 Kitap Yönetimi | `kitaplar.html` | CRUD işlemleri |
-| 👥 Üye Yönetimi | `uyeler.html` | Kullanıcı kaydı ve düzenleme |
-| 📋 İşlem Takibi | `islemler.html` | Ödünç alma/iade işlemleri |
-
----
 
 ## 🛠️ Geliştirilecek Özellikler
 
-### **🔮 Yakın Gelecek (v2.0)**
-- **Backend Entegrasyonu**: Flask/Django + PostgreSQL/MySQL
-- **Kimlik Doğrulama**: JWT tabanlı güvenli giriş
-- **API Geliştirme**: RESTful API servisleri
-- **Bildirim Sistemi**: Email/SMS hatırlatmaları
-- **Gelişmiş Arama**: ElasticSearch entegrasyonu
+###(Yakında)
 
-### **📈 Uzun Vadeli (v3.0)**
-- **Mobil Uygulama**: React Native/Flutter
-- **QR Kod Sistemi**: Kitap tarama ve ödünç alma
-- **Yapay Zeka**: Kitap öneri sistemi
-- **Multi-dil Desteği**: İngilizce/Türkçe
-- **Analitik Dashboard**: Kullanım istatistikleri
+* JWT kimlik doğrulama
+* E-posta bildirim sistemi
+* Gelişmiş arama
+* Loglama & hata yönetimi
+
+### (Uzun Vadeli)
+
+* Mobil uygulama (Flutter)
+* QR kod ile hızlı ödünç alma
+* Yapay zeka kitap öneri sistemi
 
 ---
 
-### **Kod Standartları**
-- **HTML**: Semantic yapı, accessibility
-- **CSS**: BEM metodolojisi, mobile-first
-- **JavaScript**: ES6+ standartları
-- **Commit**: Conventional Commits formatı
+## 📄 Kod Standartları
+
+* **HTML:** Semantic + WCAG uyumlu
+* **CSS:** BEM + mobile first
+* **JS:** ES6+ standartları
+* **Commit:** Conventional Commits
 
 ---
 
@@ -174,6 +129,6 @@ php -S localhost:8000
 ![GitHub forks](https://img.shields.io/github/forks/Tizhqy/kutuphane_proje?style=social)
 ![GitHub issues](https://img.shields.io/github/issues/Tizhqy/kutuphane_proje)
 
-**Son Güncelleme**: Ekim 2025  
-**Sürüm**: v0.15
+**Son Güncelleme**: Kasım 2025  
+**Sürüm**: v0.2
 **Durum**: Aktif Geliştirme 🚀
