@@ -4,10 +4,10 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ktphnAPI.Models
 {
-    [Table("uyeler")] 
+    [Table("uyeler")]
     public class Uye
     {
-[Key]
+        [Key]
         [Column("uye_id")]
         public int Id { get; set; }
 
@@ -25,6 +25,9 @@ namespace ktphnAPI.Models
 
         [Column("ogrenci_no")]
         public string? OgrenciNo { get; set; } = string.Empty;
+
+        [Column("durum")]
+        public string? Durum { get; set; } = string.Empty;
 
         [Column("kayit_tarihi")]
         public DateTime? KayitTarihi { get; set; }

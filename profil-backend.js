@@ -1,12 +1,9 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // Test amaçlı ID'si 1 olan üyeyi çağırıyoruz
     uyeGetir(1);
 });
 
 function uyeGetir(id) {
-    // DİKKAT: Port numaran 5165 ise böyle kalsın. 
-    // Controller adın 'UyelerController' olduğu için adres '/api/uyeler' olmalı.
-    const apiurl = `http://localhost:5165/api/uyeler/${id}`;
+    const apiurl = `http://localhost:5165/api/profil/${id}`;
 
     fetch(apiurl)
         .then(response => {
