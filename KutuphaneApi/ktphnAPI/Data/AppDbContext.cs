@@ -8,5 +8,7 @@ namespace ktphnAPI.Data
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         public DbSet<Kitap> Kitaplar { get; set; }
+
+        public DbSet<Uye> Uyeler { get; set; }
     }
 }
