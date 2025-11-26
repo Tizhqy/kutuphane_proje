@@ -15,7 +15,8 @@ function uyeleriGetir() {
 
                 let durumSinifi = 'status active';
                 let durumYazisi = 'Aktif';
-
+                let rolHTML = rolRozetiOlustur(uye.rolIsimleri);
+                
                 if (uye.durum == 'pasif') {
                     durumSinifi = 'status overdue';
                     durumYazisi = 'Pasif';
@@ -36,7 +37,7 @@ function uyeleriGetir() {
                         <td>${uye.adSoyad}</td>
                         <td>${uye.email}</td>
                         <td>${uye.telefon || '-'}</td>
-                        <td>👨‍🎓 Öğrenci</td> <td>${ogrenciNo}</td>
+                        <td>${rolHTML}</td> <td>${ogrenciNo}</td>
                         <td>${kayitTarihi}</td>
                         <td><span class="${durumSinifi}">${durumYazisi}</span></td>
                         <td>
@@ -64,4 +65,27 @@ function uyeSil(id) {
 
 function uyeDuzenle(id) {
     console.log("Düzenlenecek ID:", id);
+}
+
+function rolRozetiOlustur(rol) {
+    if (!rol) rol = 'Öğrenci'; 
+
+    let kucukRol = rol.toLowerCase();
+    if (kucukRol.includes('super_admin') || kucukRol.includes('süper') || kucukRol.includes('super')) {
+        return '<span class="badge super">👑 Süper Admin</span>';
+    }
+
+    if (kucukRol.includes('admin')) {
+        return '<span class="badge admin">🔐 Admin</span>';
+    }
+
+    if (kucukRol.includes('personel') || kucukRol.includes('staff')) {
+        return '<span class="badge staff">👔 Personel</span>';
+    }
+
+    if (kucukRol.includes('akademisyen') || kucukRol.includes('academic')) {
+        return '<span class="badge academic">👨‍🏫 Akademisyen</span>';
+    }
+
+    return '<span class="badge student">👨‍🎓 Öğrenci</span>';
 }

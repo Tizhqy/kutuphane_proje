@@ -571,6 +571,38 @@
         color: #f57c00;
     }
 
+    /* role badges */
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: white;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+
+    .badge.super {
+        background: linear-gradient(90deg,#ffd54f,#ffb300);
+        color: #3b2e00;
+    }
+
+    .badge.admin {
+        background: linear-gradient(90deg,#ef5350,#e53935);
+    }
+
+    .badge.staff {
+        background: linear-gradient(90deg,#64b5f6,#1976d2);
+    }
+
+    .badge.academic {
+        background: linear-gradient(90deg,#ba68c8,#7b1fa2);
+    }
+
+    .badge.student {
+        background: linear-gradient(90deg,#81c784,#4caf50);
+    }
+
     /*islemler (transactions)*/
     .transaction-table-section {
         background: white;

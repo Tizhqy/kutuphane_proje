@@ -20,7 +20,21 @@ namespace ktphnAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Uye>>> GetUyeler()
         {
-            return await _context.Uyeler.ToListAsync();
+            var uyeler = await _context.Uyeler.ToListAsync();
+            foreach (var uye in uyeler)
+            {
+                var roller = await (from ur in _context.UyeRolleri
+                                    join r in _context.Roller on ur.RolId equals r.Id
+                                    where ur.UyeId == uye.Id
+                                    select r.RolAdi).ToListAsync();
+
+                uye.RolIsimleri = string.Join(", ", roller);
+
+                if (string.IsNullOrEmpty(uye.RolIsimleri))
+                    uye.RolIsimleri = "Öğrenci";
+            }
+
+            return uyeler;
         }
     }
 }

@@ -31,5 +31,8 @@ namespace ktphnAPI.Models
 
         [Column("kayit_tarihi")]
         public DateTime? KayitTarihi { get; set; }
+
+        [NotMapped]
+        public string RolIsimleri { get; set; } = "";
     }
 }

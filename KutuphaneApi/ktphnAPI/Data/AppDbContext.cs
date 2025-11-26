@@ -10,5 +10,9 @@ namespace ktphnAPI.Data
         public DbSet<Kitap> Kitaplar { get; set; }
 
         public DbSet<Uye> Uyeler { get; set; }
+
+        public DbSet<Rol> Roller { get; set; }
+
+        public DbSet<UyeRol> UyeRolleri { get; set; }
     }
 }
