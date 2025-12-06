@@ -7,6 +7,7 @@
     <title>Kütüphane</title>
     <link rel="stylesheet" href="ustyle.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
 </head>
 
 <body>
@@ -22,9 +23,16 @@
                         <i class="fas fa-search search-icon"></i>
                         <input type="text" placeholder="Kitap ara..." class="search-input">
                     </div>
-                    <div class="user-profile">
-                        <i class="fas fa-user-circle"></i>
-                        <span>Öğrenci</span>
+                    <div class="user-profile" id="userProfile" aria-haspopup="true">
+                        <i class="fas fa-user-circle fa-2x"></i>
+                        <div class="user-meta">
+                            <span class="user-name" id="userName">İsimsiz</span>
+                            <span class="user-role" id="userRole">Öğrenci</span>
+                        </div>
+
+                        <div class="user-dropdown" id="userDropdown">
+                            <button class="logout-btn" id="logoutBtn">Çıkış Yap</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -150,7 +158,45 @@
         <br>
         <a href="anasyafa.html">Anasayfa</a>
     </footer>
+    <script>(function () {
+    const userId = localStorage.getItem('kutuphane_id');
+    const userName = localStorage.getItem('kutuphane_ad') || '';
+    const userRole = localStorage.getItem('kutuphane_rol') || '';
 
+    const nameEl = document.getElementById('userName');
+    const roleEl = document.getElementById('userRole');
+    const profileEl = document.getElementById('userProfile');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    if (!userId) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    if (nameEl) nameEl.textContent = userName || 'Üye';
+    if (roleEl) {
+        const disp = (userRole || 'ogrenci').replace('_', ' ');
+        roleEl.textContent = disp.charAt(0).toUpperCase() + disp.slice(1);
+    }
+
+    function logout() {
+        localStorage.removeItem('kutuphane_id');
+        localStorage.removeItem('kutuphane_ad');
+        localStorage.removeItem('kutuphane_rol');
+        localStorage.removeItem('kutuphane_token');
+        window.location.href = 'login.html';
+    }
+
+    if (logoutBtn) logoutBtn.addEventListener('click', logout);
+
+    if (profileEl) {
+        profileEl.addEventListener('click', function (e) {
+            if (e.target && e.target.id === 'logoutBtn') return;
+            this.classList.toggle('open');
+        });
+    }
+})();
+</script>
 </body>
 
 </html>

@@ -1,8 +1,15 @@
 document.addEventListener('DOMContentLoaded', function () {
-    uyeGetir(1);
+    const girisYapanID = localStorage.getItem('kutuphane_id');
+    if (!girisYapanID) {
+        alert("Lütfen önce giriş yapın!");
+        window.location.href = 'login.html';
+        return;
+    }
+
+    profilBilgileriniGetir(girisYapanID);
 });
 
-function uyeGetir(id) {
+function profilBilgileriniGetir(id) {
     const apiurl = `http://localhost:5165/api/profil/${id}`;
 
     fetch(apiurl)
@@ -93,4 +100,13 @@ function uyeGetir(id) {
             console.error('Hata:', error);
             alert('Profil yüklenirken hata oluştu.');
         });
+}
+function cikisYap() {
+    if(confirm("Çıkış yapmak istediğinize emin misiniz?")) {
+        localStorage.removeItem('kutuphane_id');
+        localStorage.removeItem('kutuphane_ad');
+        localStorage.removeItem('kutuphane_rol');
+        
+        window.location.href = 'anasayfa.html';
+    }
 }

@@ -19,29 +19,51 @@ namespace ktphnAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Kitap>>> GetKitaplar()
+        public async Task<IActionResult> GetKitaplar()
         {
-            return await _context.Kitaplar.ToListAsync();
+            try
+            {
+                var kitaplar = await _context.Kitaplar.ToListAsync();
+                return Ok(new { success = true, total = kitaplar.Count, data = kitaplar });
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Veri alınırken hata oluştu.", detail = ex.Message });
+            }
         }
         [HttpGet("{id}")]
-        public async Task<ActionResult<Kitap>> GetKitap(int id)
+        public async Task<IActionResult> GetKitap(int id)
         {
-            var kitap = await _context.Kitaplar.FindAsync(id);
-
-            if (kitap == null)
+            try
             {
-                return NotFound();
+                var kitap = await _context.Kitaplar.FindAsync(id);
+                if (kitap == null)
+                {
+                    return NotFound(new { success = false, message = "Kitap bulunamadı." });
+                }
+                return Ok(new { success = true, data = kitap });
             }
-
-            return kitap;
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "İstek işlenirken hata oluştu.", detail = ex.Message });
+            }
         }
 
         [HttpPost]
-        public async Task<ActionResult<Kitap>> PostKitap(Kitap kitap)
+        public async Task<IActionResult> PostKitap(Kitap kitap)
         {
-            _context.Kitaplar.Add(kitap);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction("GetKitap", new { id = kitap.Id }, kitap);
+            if (kitap == null) return BadRequest(new { success = false, message = "Geçersiz kitap verisi." });
+            if (!ModelState.IsValid) return BadRequest(new { success = false, message = "Model doğrulaması başarısız.", errors = ModelState });
+            try
+            {
+                _context.Kitaplar.Add(kitap);
+                await _context.SaveChangesAsync();
+                return CreatedAtAction("GetKitap", new { id = kitap.Id }, new { success = true, data = kitap });
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Kitap kaydedilemedi.", detail = ex.Message });
+            }
         }
     }
 }
