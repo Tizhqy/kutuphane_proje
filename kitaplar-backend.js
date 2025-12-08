@@ -21,7 +21,8 @@ async function kitapGetir() {
     try {
         const res = await fetch(apiurl);
         if (!res.ok) throw new Error('Sunucu hatasi ' + res.status);
-        const data = await res.json();
+        const payload = await res.json();
+        const data = Array.isArray(payload) ? payload : (payload.data ?? []);
 
         if (!Array.isArray(data) || data.length === 0) {
             tblgovde.innerHTML = '<tr><td colspan="6">Kayıt bulunamadı.</td></tr>';

@@ -7,7 +7,8 @@ function kitapGetir() {
 
     fetch(apiurl)
         .then(response => response.json())
-        .then(data => {
+        .then(payload => {
+            const data = Array.isArray(payload) ? payload : (payload.data ?? []);
             const tblgovde = document.getElementById('ukitaplarGovde');
             tblgovde.innerHTML = "";
 

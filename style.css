@@ -620,10 +620,113 @@
         margin-top: 1rem;
     }
 
+        /* Scroll buttons for wide tables */
+        .table-scroll-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.9);
+            border: 1px solid #e6e6e6;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 50;
+            opacity: 0.9;
+        }
+
+        .table-scroll-left {
+            right: 56px; /* appear left of right button */
+        }
+
+        .table-scroll-right {
+            right: 12px;
+        }
+
+        .table-scroll-btn svg {
+            width: 14px;
+            height: 14px;
+            fill: #1a237e;
+        }
+
+        /* Hide buttons on small screens */
+        @media (max-width: 600px) {
+            .table-scroll-btn { display: none; }
+        }
+
     .transaction-table table {
         width: 100%;
         border-collapse: collapse;
     }
+
+    /* Improve table layout for wide tables: fixed layout and controlled column widths
+       - Use table-layout: fixed so columns respect width hints and rows align.
+       - By default truncate long single-line values; allow metadata to wrap. */
+    /* Allow the table to be scrollable and let columns size naturally */
+    .transaction-table {
+        overflow-x: auto;
+    }
+
+    .transaction-table table {
+        table-layout: auto;
+    }
+
+    .transaction-table th,
+    .transaction-table td {
+        vertical-align: middle;
+        overflow-wrap: anywhere;
+        white-space: normal;
+    }
+
+    /* Column width hints (adjust as needed):
+       1: İşlem ID (small)
+       2: Üye ID (small)
+       3: Kitap ID (small)
+       4: İşlem Türü (small)
+       5: Metadata (wrap)
+       6: UserAgent (medium)
+       7: IP (small)
+       8: Alım Tarihi (medium)
+       9: İade Tarihi (medium)
+       10: Durum (small)
+       11: İşlemler (small)
+    */
+    .transaction-table th:nth-child(1), .transaction-table td:nth-child(1) { width: 6%; }
+    .transaction-table th:nth-child(2), .transaction-table td:nth-child(2) { width: 6%; }
+    .transaction-table th:nth-child(3), .transaction-table td:nth-child(3) { width: 6%; }
+    .transaction-table th:nth-child(4), .transaction-table td:nth-child(4) { width: 8%; }
+    .transaction-table th:nth-child(5), .transaction-table td:nth-child(5) { width: 28%; }
+    .transaction-table th:nth-child(6), .transaction-table td:nth-child(6) { width: 12%; }
+    .transaction-table th:nth-child(7), .transaction-table td:nth-child(7) { width: 8%; }
+    .transaction-table th:nth-child(8), .transaction-table td:nth-child(8) { width: 10%; }
+    .transaction-table th:nth-child(9), .transaction-table td:nth-child(9) { width: 10%; }
+    .transaction-table th:nth-child(10), .transaction-table td:nth-child(10) { width: 6%; }
+    .transaction-table th:nth-child(11), .transaction-table td:nth-child(11) { width: 6%; }
+
+    /* Allow metadata column to wrap and break long tokens */
+    .transaction-table td:nth-child(5) {
+        /* metadata stays wrap-capable but constrained visually */
+        white-space: normal;
+        overflow-wrap: anywhere;
+        max-width: 40ch;
+    }
+
+    /* Avoid header text wrapping; keep headers on one line */
+    .transaction-table th {
+        white-space: nowrap;
+    }
+
+    /* Use min-widths for small ID columns so header labels don't collapse */
+    .transaction-table th:nth-child(1), .transaction-table td:nth-child(1) { min-width: 48px; }
+    .transaction-table th:nth-child(2), .transaction-table td:nth-child(2) { min-width: 48px; }
+    .transaction-table th:nth-child(3), .transaction-table td:nth-child(3) { min-width: 48px; }
+    .transaction-table th:nth-child(4), .transaction-table td:nth-child(4) { min-width: 80px; }
+    .transaction-table th:nth-child(10), .transaction-table td:nth-child(10) { min-width: 80px; }
+    .transaction-table th:nth-child(11), .transaction-table td:nth-child(11) { min-width: 80px; }
 
     .transaction-table th,
     .transaction-table td {
@@ -655,6 +758,24 @@
     .status.pending {
         background: #e3f2fd;
         color: #1976d2;
+    }
+
+    /* Prevent status badges and action buttons from wrapping */
+    .transaction-table .status,
+    .transaction-table .btn-edit,
+    .transaction-table .btn-delete {
+        white-space: nowrap;
+        display: inline-block;
+    }
+
+    /* Make action column keep content on a single line when possible */
+    .transaction-table td:nth-child(11) {
+        white-space: nowrap;
+    }
+
+    .table-scroll-btn.disabled {
+        opacity: 0.45;
+        pointer-events: none;
     }
 
     /* responsive  */
