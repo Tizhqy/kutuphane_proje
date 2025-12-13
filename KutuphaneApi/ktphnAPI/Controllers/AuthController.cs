@@ -4,27 +4,36 @@ using ktphnAPI.Data;
 using ktphnAPI.Models;
 using System.Linq;
 using System.Threading.Tasks;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ktphnAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [AllowAnonymous]
     public class AuthController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IConfiguration _config;
 
-        public AuthController(AppDbContext context)
+        public AuthController(AppDbContext context, IConfiguration config)
         {
             _context = context;
+            _config = config;
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto istek)
         {
             var uye = await _context.Uyeler
-                .FirstOrDefaultAsync(u => u.Email == istek.Email && u.Sifre == istek.Sifre);
+                .FirstOrDefaultAsync(u => u.Email == istek.Email);
 
-            if (uye == null)
+            if (uye == null || !BCrypt.Net.BCrypt.Verify(istek.Sifre, uye.Sifre))
             {
                 return Unauthorized(new { mesaj = "E-mail veya şifre hatalı!" });
             }
@@ -38,12 +47,15 @@ namespace ktphnAPI.Controllers
             if (rollerList != null && rollerList.Count > 0)
             {
                 var top = rollerList.OrderByDescending(x => x.YetkiSeviyesi).First();
-                kullaniciRolu = (top.RolAdi ?? "ogrenci").ToLower();
+                var raw = (top.RolAdi ?? "ogrenci").ToLower();
+                kullaniciRolu = NormalizeRole(raw);
             }
             else
             {
                 kullaniciRolu = "ogrenci";
             }
+
+            var token = GenerateJwtToken(uye, kullaniciRolu);
 
             return Ok(new
             {
@@ -51,7 +63,90 @@ namespace ktphnAPI.Controllers
                 uyeId = uye.Id,
                 adSoyad = uye.AdSoyad,
                 rol = kullaniciRolu,
+                token
             });
+        }
+
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto istek)
+        {
+            var uyeIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(uyeIdClaim) || !int.TryParse(uyeIdClaim, out int uyeId))
+            {
+                return Unauthorized(new { mesaj = "Oturum bulunamadı!" });
+            }
+
+            var uye = await _context.Uyeler.FindAsync(uyeId);
+            if (uye == null)
+            {
+                return NotFound(new { mesaj = "Kullanıcı bulunamadı!" });
+            }
+
+            if (!BCrypt.Net.BCrypt.Verify(istek.EskiSifre, uye.Sifre))
+            {
+                return BadRequest(new { mesaj = "Mevcut şifre yanlış!" });
+            }
+
+            if (istek.YeniSifre.Length < 6)
+            {
+                return BadRequest(new { mesaj = "Yeni şifre en az 6 karakter olmalıdır!" });
+            }
+
+            uye.Sifre = BCrypt.Net.BCrypt.HashPassword(istek.YeniSifre);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { mesaj = "Şifre başarıyla değiştirildi!" });
+        }
+
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            return Ok(new { mesaj = "Çıkış yapıldı!" });
+        }
+
+        private static string NormalizeRole(string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return "ogrenci";
+            var r = raw.ToLower().Trim();
+            
+            if (r.Contains("admin") || r.Contains("super") || r.Contains("süper") || r == "super_admin" || r.Contains("yonetici") || r.Contains("yönetici"))
+                return "admin";
+            
+            if (r.Contains("akademisyen") || r == "academic" || r == "akademik")
+                return "akademisyen";
+            
+            if (r.Contains("personel") || r == "staff" || r == "calisan" || r == "çalışan")
+                return "personel";
+            
+            return "ogrenci";
+        }
+
+        private string GenerateJwtToken(Uye uye, string rol)
+        {
+            var jwtSection = _config.GetSection("Jwt");
+            var key = jwtSection.GetValue<string>("Key") ?? string.Empty;
+            var issuer = jwtSection.GetValue<string>("Issuer");
+            var audience = jwtSection.GetValue<string>("Audience");
+            var expireMinutes = jwtSection.GetValue<int?>("ExpiresMinutes") ?? 60;
+
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, uye.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, uye.Email ?? string.Empty),
+                new Claim(ClaimTypes.Name, uye.AdSoyad ?? string.Empty),
+                new Claim(ClaimTypes.Role, rol ?? "ogrenci")
+            };
+
+            var creds = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)), SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer,
+                audience,
+                claims,
+                expires: System.DateTime.UtcNow.AddMinutes(expireMinutes),
+                signingCredentials: creds);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }

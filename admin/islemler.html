@@ -5,14 +5,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kutuphane Sistemi - Panel</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../styles/style.css">
+    <script>
+    (function() {
+        const token = localStorage.getItem('kutuphane_token');
+        const rol = (localStorage.getItem('kutuphane_rol') || '').toLowerCase();
+        const adminAnahtarlar = ['admin', 'super', 'süper', 'super_admin'];
+        const isAdmin = adminAnahtarlar.some(k => rol.includes(k));
+        if (!token || !isAdmin) {
+            alert('Bu sayfa yalnızca admin kullanıcılar içindir.');
+            window.location.href = '../login.html';
+        }
+    })();
+    </script>
 </head>
 
 <body>
     <header class="header">
         <div class="container">
             <h1 class="logo">
-                <img src="images/ktulogo.png" alt="ktu" class="logo-img">
+                <img src="../images/ktulogo.png" alt="ktu" class="logo-img">
                 Kütüphane Sistemi
             </h1>
             <nav class="nav">
@@ -20,6 +32,7 @@
                 <a href="kitaplar.html" class="nav-link">Kitaplar</a>
                 <a href="uyeler.html" class="nav-link">Üyeler</a>
                 <a href="islemler.html" class="nav-link active">İşlemler</a>
+                <button onclick="handleLogout()" class="btn btn-logout">Çıkış Yap</button>
             </nav>
             <div class="search-box">
                 <input type="text" placeholder="Kitapları veya üyeleri ara" class="search-input">
@@ -97,6 +110,11 @@
         <br>
         <a href="anasyafa.html">Anasayfa</a>
     </footer>
+    <script src="admin-common.js"></script>
+    <script src="islemler-backend.js"></script>
+</body>
+
+</html>
     <script src="islemler-backend.js"></script>
 </body>
 </html>

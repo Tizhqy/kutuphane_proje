@@ -2,16 +2,33 @@ document.addEventListener('DOMContentLoaded', function () {
     uyeleriGetir();
 });
 
-function uyeleriGetir() {
+async function uyeleriGetir() {
     const apiurl = 'http://localhost:5165/api/uyeler';
+    const tblgovde = document.getElementById('uyelerTableGovde');
+    if (!tblgovde) return;
+    tblgovde.innerHTML = '<tr><td colspan="9">Yükleniyor...</td></tr>';
 
-    fetch(apiurl)
-        .then(response => response.json())
-        .then(data => {
-            const tblgovde = document.getElementById('uyelerTableGovde');
-            tblgovde.innerHTML = "";
+    try {
+        const token = localStorage.getItem('kutuphane_token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const res = await fetch(apiurl, { headers });
 
-            data.forEach(uye => {
+        if (res.status === 401) {
+            tblgovde.innerHTML = '<tr><td colspan="9">Oturum süreniz doldu. Lütfen yeniden giriş yapın.</td></tr>';
+            setTimeout(() => window.location.href = 'login.html', 800);
+            return;
+        }
+        if (res.status === 403) {
+            tblgovde.innerHTML = '<tr><td colspan="9">Bu alan için admin yetkisi gerekir.</td></tr>';
+            return;
+        }
+        if (!res.ok) throw new Error('Sunucu hatası: ' + res.status);
+
+        const payload = await res.json();
+        const data = Array.isArray(payload) ? payload : (payload.data ?? payload ?? []);
+
+        tblgovde.innerHTML = "";
+        data.forEach(uye => {
 
                 let durumSinifi = 'status active';
                 let durumYazisi = 'Aktif';
@@ -47,13 +64,12 @@ function uyeleriGetir() {
                     </tr>
                 `;
 
-                tblgovde.innerHTML += satir;
-            });
-        })
-        .catch(error => {
-            console.error('Hata olustu:', error);
-            alert('Backend ile bağlantı kurulamadı!');
+            tblgovde.innerHTML += satir;
         });
+    } catch (error) {
+        console.error('Hata olustu:', error);
+        tblgovde.innerHTML = '<tr><td colspan="9">Backend ile bağlantı kurulamadı.</td></tr>';
+    }
 }
 
 

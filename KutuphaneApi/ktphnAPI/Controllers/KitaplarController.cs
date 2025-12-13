@@ -4,6 +4,7 @@ using ktphnAPI.Data;
 using ktphnAPI.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ktphnAPI.Controllers
 {
@@ -19,6 +20,7 @@ namespace ktphnAPI.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> GetKitaplar()
         {
             try
@@ -31,7 +33,25 @@ namespace ktphnAPI.Controllers
                 return StatusCode(500, new { success = false, message = "Veri alınırken hata oluştu.", detail = ex.Message });
             }
         }
+
+        // Kullanıcıların görebileceği kitap listesi (token gerekli, admin şartı yok)
+        [HttpGet("public")]
+        [Authorize]
+        public async Task<IActionResult> GetPublicKitaplar()
+        {
+            try
+            {
+                var kitaplar = await _context.Kitaplar.ToListAsync();
+                return Ok(new { success = true, total = kitaplar.Count, data = kitaplar });
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Veri alınırken hata oluştu.", detail = ex.Message });
+            }
+        }
+        
         [HttpGet("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> GetKitap(int id)
         {
             try
@@ -50,6 +70,7 @@ namespace ktphnAPI.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> PostKitap(Kitap kitap)
         {
             if (kitap == null) return BadRequest(new { success = false, message = "Geçersiz kitap verisi." });

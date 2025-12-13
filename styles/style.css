@@ -54,6 +54,7 @@
     .nav {
         display: flex;
         gap: 2rem;
+        align-items: center;
     }
 
     .nav-link {
@@ -228,6 +229,31 @@
     .btn-secondary:hover {
         background: #303f9f;
         color: white;
+    }
+
+    /* Logout button */
+    .btn-logout {
+        margin-left: auto;
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: #fff;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .btn-logout:hover {
+        background: rgba(220, 53, 69, 0.9);
+        border-color: rgba(220, 53, 69, 1);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
 
     footer {
@@ -603,7 +629,6 @@
         background: linear-gradient(90deg,#81c784,#4caf50);
     }
 
-    /*islemler (transactions)*/
     .transaction-table-section {
         background: white;
         border-radius: 10px;
@@ -620,7 +645,6 @@
         margin-top: 1rem;
     }
 
-        /* Scroll buttons for wide tables */
         .table-scroll-btn {
             position: absolute;
             top: 50%;
@@ -640,7 +664,7 @@
         }
 
         .table-scroll-left {
-            right: 56px; /* appear left of right button */
+            right: 56px; 
         }
 
         .table-scroll-right {
@@ -653,7 +677,6 @@
             fill: #1a237e;
         }
 
-        /* Hide buttons on small screens */
         @media (max-width: 600px) {
             .table-scroll-btn { display: none; }
         }
@@ -663,10 +686,6 @@
         border-collapse: collapse;
     }
 
-    /* Improve table layout for wide tables: fixed layout and controlled column widths
-       - Use table-layout: fixed so columns respect width hints and rows align.
-       - By default truncate long single-line values; allow metadata to wrap. */
-    /* Allow the table to be scrollable and let columns size naturally */
     .transaction-table {
         overflow-x: auto;
     }
@@ -682,19 +701,7 @@
         white-space: normal;
     }
 
-    /* Column width hints (adjust as needed):
-       1: İşlem ID (small)
-       2: Üye ID (small)
-       3: Kitap ID (small)
-       4: İşlem Türü (small)
-       5: Metadata (wrap)
-       6: UserAgent (medium)
-       7: IP (small)
-       8: Alım Tarihi (medium)
-       9: İade Tarihi (medium)
-       10: Durum (small)
-       11: İşlemler (small)
-    */
+    
     .transaction-table th:nth-child(1), .transaction-table td:nth-child(1) { width: 6%; }
     .transaction-table th:nth-child(2), .transaction-table td:nth-child(2) { width: 6%; }
     .transaction-table th:nth-child(3), .transaction-table td:nth-child(3) { width: 6%; }
@@ -707,20 +714,16 @@
     .transaction-table th:nth-child(10), .transaction-table td:nth-child(10) { width: 6%; }
     .transaction-table th:nth-child(11), .transaction-table td:nth-child(11) { width: 6%; }
 
-    /* Allow metadata column to wrap and break long tokens */
     .transaction-table td:nth-child(5) {
-        /* metadata stays wrap-capable but constrained visually */
         white-space: normal;
         overflow-wrap: anywhere;
         max-width: 40ch;
     }
 
-    /* Avoid header text wrapping; keep headers on one line */
     .transaction-table th {
         white-space: nowrap;
     }
 
-    /* Use min-widths for small ID columns so header labels don't collapse */
     .transaction-table th:nth-child(1), .transaction-table td:nth-child(1) { min-width: 48px; }
     .transaction-table th:nth-child(2), .transaction-table td:nth-child(2) { min-width: 48px; }
     .transaction-table th:nth-child(3), .transaction-table td:nth-child(3) { min-width: 48px; }
@@ -760,7 +763,6 @@
         color: #1976d2;
     }
 
-    /* Prevent status badges and action buttons from wrapping */
     .transaction-table .status,
     .transaction-table .btn-edit,
     .transaction-table .btn-delete {
@@ -768,7 +770,6 @@
         display: inline-block;
     }
 
-    /* Make action column keep content on a single line when possible */
     .transaction-table td:nth-child(11) {
         white-space: nowrap;
     }

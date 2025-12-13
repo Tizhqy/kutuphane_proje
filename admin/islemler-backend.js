@@ -16,10 +16,21 @@ async function islemGetir() {
     const tblgovde = document.getElementById('islemlerTableGovde');
     if (!tblgovde) return console.warn('Tablo govdesi bulunamadi: islemlerTableGovde');
 
-    tblgovde.innerHTML = '<tr><td colspan="11">Yükleniyor...</td></tr>';
+    tblgovde.innerHTML = '<tr><td colspan="11">Yüklèniyor...</td></tr>';
 
     try {
-        const res = await fetch(apiurl);
+        const token = localStorage.getItem('kutuphane_token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const res = await fetch(apiurl, { headers });
+        if (res.status === 401) {
+            tblgovde.innerHTML = '<tr><td colspan="11">Oturum süreniz doldu. Lütfen tekrar giriş yapın.</td></tr>';
+            setTimeout(() => window.location.href = 'login.html', 800);
+            return;
+        }
+        if (res.status === 403) {
+            tblgovde.innerHTML = '<tr><td colspan="11">Bu alan için admin yetkisi gerekir.</td></tr>';
+            return;
+        }
         if (!res.ok) throw new Error('Sunucu hatasi ' + res.status);
         const payload = await res.json();
         const data = Array.isArray(payload) ? payload : (payload.data ?? []);
@@ -88,7 +99,7 @@ async function islemGetir() {
 
     } catch (error) {
         console.error('Hata olustu:', error);
-        tblgovde.innerHTML = '<tr><td colspan="6">Backend ile bağlantı kurulamadı.</td></tr>';
+        tblgovde.innerHTML = '<tr><td colspan="11">Backend ile bağlantı kurulamadı.</td></tr>';
     }
 }
 function islemSil(id) {

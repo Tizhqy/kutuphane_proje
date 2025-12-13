@@ -12,7 +12,10 @@ document.addEventListener('DOMContentLoaded', function () {
 function profilBilgileriniGetir(id) {
     const apiurl = `http://localhost:5165/api/profil/${id}`;
 
-    fetch(apiurl)
+    const token = localStorage.getItem('kutuphane_token');
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+    fetch(apiurl, { headers })
         .then(response => {
             if (!response.ok) {
                 throw new Error("Üye bulunamadı! (Veritabanında ID 1 var mı?)");

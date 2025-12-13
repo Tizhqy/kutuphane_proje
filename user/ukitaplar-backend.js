@@ -3,11 +3,32 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function kitapGetir() {
-    const apiurl = 'http://localhost:5165/api/kitaplar';
+    const apiurl = 'http://localhost:5165/api/kitaplar/public';
 
-    fetch(apiurl)
-        .then(response => response.json())
+    const token = localStorage.getItem('kutuphane_token');
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+    fetch(apiurl, { headers })
+        .then(response => {
+            console.log('API Response status:', response.status);
+            if (response.status === 401) {
+                console.error('401 Unauthorized - Token geçersiz veya yok');
+                alert('Oturum süreniz doldu. Lütfen yeniden giriş yapın.');
+                window.location.href = '../login.html';
+                return null;
+            }
+            if (response.status === 403) {
+                console.error('403 Forbidden - Yetki yok');
+                console.log('Token:', localStorage.getItem('kutuphane_token'));
+                console.log('Rol:', localStorage.getItem('kutuphane_rol'));
+                alert('Bu alan için yetkiniz yok.');
+                return null;
+            }
+            if (!response.ok) throw new Error('Sunucu hatası: ' + response.status);
+            return response.json();
+        })
         .then(payload => {
+            if (!payload) return;
             const data = Array.isArray(payload) ? payload : (payload.data ?? []);
             const tblgovde = document.getElementById('ukitaplarGovde');
             tblgovde.innerHTML = "";

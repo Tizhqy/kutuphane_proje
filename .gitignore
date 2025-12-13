@@ -5,4 +5,4 @@ obj/
 *.suo
 *.db
 appsettings.Development.json
-.sql
+*.sql

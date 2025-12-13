@@ -41,8 +41,14 @@ if (loginForm) {
 
             console.log('login response', response.status, data);
 
-            if (data.uyeId) localStorage.setItem('kutuphane_id', data.uyeId);
-            if (data.adSoyad) localStorage.setItem('kutuphane_ad', data.adSoyad);
+            if (data.uyeId) {
+                localStorage.setItem('kutuphane_id', data.uyeId);
+                localStorage.setItem('kutuphane_uyeId', data.uyeId);
+            }
+            if (data.adSoyad) {
+                localStorage.setItem('kutuphane_ad', data.adSoyad);
+                localStorage.setItem('kutuphane_adSoyad', data.adSoyad);
+            }
             if (data.rol) localStorage.setItem('kutuphane_rol', data.rol);
             if (data.token) localStorage.setItem('kutuphane_token', data.token);
 
@@ -55,9 +61,9 @@ if (loginForm) {
             const isAdmin = adminKeys.some(k => gelenRol.includes(k));
 
             if (isAdmin) {
-                window.location.href = 'index.html';
+                window.location.href = 'admin/index.html';
             } else {
-                window.location.href = 'user-dashboard.html';
+                window.location.href = 'user/user-dashboard.html';
             }
 
         } catch (error) {

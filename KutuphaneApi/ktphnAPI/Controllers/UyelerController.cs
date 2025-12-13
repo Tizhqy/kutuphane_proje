@@ -4,11 +4,13 @@ using ktphnAPI.Data;
 using ktphnAPI.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ktphnAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "admin")]
     public class UyelerController : ControllerBase
     {
         private readonly AppDbContext _context;
