@@ -17,6 +17,6 @@ namespace ktphnAPI.Data
 
         public DbSet<İslemler> İslemler { get; set; }
 
-        public DbSet<Rezervasyon> Rezervasyonlar { get; set; }
+        public DbSet<Rezervasyon> Rezervasyonlar { get; set; } 
     }
 }

@@ -66,7 +66,7 @@ namespace ktphnAPI.Controllers
                 {
                     return Unauthorized(new { success = false, message = "Oturum bulunamadı!" });
                 }
-
+ 
                 var islemler = await _context.İslemler
                     .Where(i => i.UyeId == uyeId && i.İslemTuru == "odunc" && i.IadeTarihi == null)
                     .ToListAsync();

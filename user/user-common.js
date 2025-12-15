@@ -49,7 +49,7 @@
                 window.location.href = '../login.html';
             }).catch((error) => {
                 console.error('Logout hatası:', error);
-                // Hata olsa bile local storage'ı temizle
+                // local storage temizleme
                 localStorage.removeItem('kutuphane_id');
                 localStorage.removeItem('kutuphane_ad');
                 localStorage.removeItem('kutuphane_rol');
@@ -70,7 +70,7 @@
         }
     }
 
-    // DOM ready kontrol
+    // DOM ready 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initializeUserProfile);
     } else {

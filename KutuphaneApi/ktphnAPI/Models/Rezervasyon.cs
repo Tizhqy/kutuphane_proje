@@ -15,7 +15,7 @@ namespace ktphnAPI.Models
         public int UyeId { get; set; }
 
         [Column("kitap_id")]
-        public int KitapId { get; set; }
+        public int KitapId { get; set; } 
 
         [Column("baslangic_tarihi")]
         public DateTime BaslangicTarihi { get; set; }

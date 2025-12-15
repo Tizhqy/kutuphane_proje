@@ -70,7 +70,7 @@ function kitapGetir() {
                             <button class="btn-details" data-id="${id}">Detaylar</button>
                         </div>
                     </div>
-                `;
+                `; 
 
                 tblgovde.innerHTML += satir;
             });

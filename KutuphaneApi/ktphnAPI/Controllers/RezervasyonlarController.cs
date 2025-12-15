@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 
 namespace ktphnAPI.Controllers
-{
+{ 
     [Route("api/rezervasyonlar")]
     [ApiController]
     [Authorize]
