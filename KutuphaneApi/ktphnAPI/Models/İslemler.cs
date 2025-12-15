@@ -37,6 +37,10 @@ namespace ktphnAPI.Models
         [MaxLength(512)]
         public string? UserAgent { get; set; }
 
+        [Column("ip_address")]
+        [MaxLength(64)]
+        public string? IpAddress { get; set; }
+
         [Column("olusturma_tarihi")]
         public DateTime? OlusturmaTarihi { get; set; }
 

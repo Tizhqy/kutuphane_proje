@@ -116,8 +116,36 @@
         <p>&copy; 2025 Kütüphane Projesi.</p>
         <a href="mailto:458364@ogr.ktu.edu.tr">458364@ogr.ktu.edu.tr</a>
         <br>
-        <a href="anasyafa.html">Anasayfa</a>
+        <a href="../anasyafa.html">Anasayfa</a>
     </footer>
+    
+    <!-- Modal: Kitap Detay / Ödünç / Rezervasyon -->
+    <div id="kitapModal" class="modal hidden" aria-hidden="true">
+        <div class="modal-backdrop" id="modalBackdrop"></div>
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <button class="modal-close" id="modalClose" aria-label="Kapat">&times;</button>
+            <h3 id="modalTitle">Kitap Başlığı</h3>
+            <p class="modal-author" id="modalAuthor">Yazar</p>
+            <p class="modal-meta"><span id="modalCategory">Kategori</span> • <span id="modalYear">Yıl</span> • <span id="modalIsbn">ISBN</span></p>
+            <div class="modal-status" id="modalStatus"></div>
+            
+            <div id="modalReservations" class="modal-reservations">
+                <h4>Rezervasyonlar</h4>
+                <ul id="reservationList" class="reservation-list">
+                    <li>Rezervasyon verisi yok.</li>
+                </ul>
+                <div class="reservation-form">
+                    <label for="reservationDate">Almak istediğin tarih</label>
+                    <input type="date" id="reservationDate" />
+                    <button class="btn-reserve" id="reserveSubmit">Rezerve Et</button>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn-reserve" id="borrowBtn">Ödünç Al</button>
+            </div>
+        </div>
+    </div>
     <script src="user-common.js"></script>
     <script src="ukitaplar-backend.js"></script>
 </body>

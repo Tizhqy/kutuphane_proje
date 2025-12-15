@@ -34,7 +34,6 @@ namespace ktphnAPI.Controllers
             }
         }
 
-        // Kullanıcıların görebileceği kitap listesi (token gerekli, admin şartı yok)
         [HttpGet("public")]
         [Authorize]
         public async Task<IActionResult> GetPublicKitaplar()

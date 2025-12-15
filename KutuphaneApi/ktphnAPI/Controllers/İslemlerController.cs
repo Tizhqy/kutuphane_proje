@@ -5,6 +5,7 @@ using ktphnAPI.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using System.Text.Json;
 
 namespace ktphnAPI.Controllers
 {
@@ -54,7 +55,6 @@ namespace ktphnAPI.Controllers
             }
         }
 
-        // Kullanıcının ödünç aldığı kitapları listele
         [HttpGet("benim-kitaplarim")]
         [Authorize]
         public async Task<IActionResult> BenimKitaplarım()
@@ -79,7 +79,6 @@ namespace ktphnAPI.Controllers
             }
         }
 
-        // Kitap ödünç al
         [HttpPost("odunc-al")]
         [Authorize]
         public async Task<IActionResult> OduncAl([FromBody] OduncAlRequest request)
@@ -92,14 +91,12 @@ namespace ktphnAPI.Controllers
                     return Unauthorized(new { success = false, message = "Oturum bulunamadı!" });
                 }
 
-                // Kitabın var mı ve mevcut mu kontrol et
                 var kitap = await _context.Kitaplar.FindAsync(request.KitapId);
-                if (kitap == null || kitap.Durum != "mevcut")
+                if (kitap == null || (kitap.Durum != "mevcut" && kitap.Durum != "musait"))
                 {
                     return BadRequest(new { success = false, message = "Kitap mevcut değil!" });
                 }
 
-                // Kullanıcı zaten bu kitabı ödünç almış mı kontrol et
                 var mevcutOdunc = await _context.İslemler
                     .FirstOrDefaultAsync(i => i.UyeId == uyeId && i.KitapId == request.KitapId && i.İslemTuru == "odunc" && i.IadeTarihi == null);
                 if (mevcutOdunc != null)
@@ -107,22 +104,24 @@ namespace ktphnAPI.Controllers
                     return BadRequest(new { success = false, message = "Bu kitabı zaten ödünç almışsınız!" });
                 }
 
-                // İşlem ekle
+                var remoteIp = HttpContext.Connection?.RemoteIpAddress?.MapToIPv4()?.ToString() ?? string.Empty;
+                var userAgent = Request.Headers["User-Agent"].ToString();
+                var meta = new { action = "odunc-al", source = "api", createdAt = DateTime.UtcNow };
+
                 var islem = new İslemler
                 {
                     UyeId = uyeId,
                     KitapId = request.KitapId,
                     İslemTuru = "odunc",
                     AlimTarihi = DateTime.UtcNow,
-                    Durum = "aktif",
-                    OlusturmaTarihi = DateTime.UtcNow
+                    Durum = "odunc",
+                    OlusturmaTarihi = DateTime.UtcNow,
+                    UserAgent = userAgent,
+                    IpAddress = remoteIp,
+                    Metadata = JsonSerializer.Serialize(meta)
                 };
 
                 _context.İslemler.Add(islem);
-
-                // Kitabı "odunc" yap (trigger veya manuel)
-                kitap.Durum = "odunc";
-                _context.Kitaplar.Update(kitap);
 
                 await _context.SaveChangesAsync();
 
@@ -134,7 +133,6 @@ namespace ktphnAPI.Controllers
             }
         }
 
-        // Kitap iade et
         [HttpPost("iade-et")]
         [Authorize]
         public async Task<IActionResult> IadeEt([FromBody] IadeEtRequest request)
@@ -147,7 +145,6 @@ namespace ktphnAPI.Controllers
                     return Unauthorized(new { success = false, message = "Oturum bulunamadı!" });
                 }
 
-                // İşlemi bul
                 var islem = await _context.İslemler
                     .FirstOrDefaultAsync(i => i.Id == request.IslemId && i.UyeId == uyeId && i.İslemTuru == "odunc" && i.IadeTarihi == null);
                 if (islem == null)
@@ -155,18 +152,16 @@ namespace ktphnAPI.Controllers
                     return NotFound(new { success = false, message = "İşlem bulunamadı!" });
                 }
 
-                // İşlemi güncelle
-                islem.IadeTarihi = DateTime.UtcNow;
-                islem.Durum = "tamamlandi";
-                _context.İslemler.Update(islem);
+                var remoteIp = HttpContext.Connection?.RemoteIpAddress?.MapToIPv4()?.ToString() ?? string.Empty;
+                var userAgent = Request.Headers["User-Agent"].ToString();
+                var meta = new { action = "iade-et", source = "api", updatedAt = DateTime.UtcNow };
 
-                // Kitabı "mevcut" yap
-                var kitap = await _context.Kitaplar.FindAsync(islem.KitapId);
-                if (kitap != null)
-                {
-                    kitap.Durum = "mevcut";
-                    _context.Kitaplar.Update(kitap);
-                }
+                islem.IadeTarihi = DateTime.UtcNow;
+                islem.Durum = "iade";
+                islem.UserAgent = userAgent;
+                islem.IpAddress = remoteIp;
+                islem.Metadata = JsonSerializer.Serialize(meta);
+                _context.İslemler.Update(islem);
 
                 await _context.SaveChangesAsync();
 
@@ -178,7 +173,6 @@ namespace ktphnAPI.Controllers
             }
         }
 
-        // Geç kalan kitapları listele
         [HttpGet("geciken")]
         [Authorize]
         public async Task<IActionResult> Geciken()
@@ -196,7 +190,6 @@ namespace ktphnAPI.Controllers
                 var rol = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "ogrenci";
                 bool isAdmin = rol.Contains("admin");
 
-                // Admin tüm gecikenleri görebilir, user sadece kendisini
                 var query = _context.İslemler
                     .Where(i => i.İslemTuru == "odunc" && i.IadeTarihi == null && i.AlimTarihi.HasValue)
                     .Where(i => i.AlimTarihi.Value.AddDays(14) < DateTime.UtcNow);
@@ -217,7 +210,6 @@ namespace ktphnAPI.Controllers
         }
     }
 
-    // DTOs
     public class OduncAlRequest
     {
         public int KitapId { get; set; }
