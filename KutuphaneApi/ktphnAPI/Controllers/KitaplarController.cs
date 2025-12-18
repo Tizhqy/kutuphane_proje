@@ -36,12 +36,32 @@ namespace ktphnAPI.Controllers
 
         [HttpGet("public")]
         [Authorize]
-        public async Task<IActionResult> GetPublicKitaplar()
+        public async Task<IActionResult> GetPublicKitaplar([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
             try
             {
-                var kitaplar = await _context.Kitaplar.ToListAsync();
-                return Ok(new { success = true, total = kitaplar.Count, data = kitaplar });
+                if (page < 1) page = 1;
+                if (pageSize < 1) pageSize = 20;
+                if (pageSize > 100) pageSize = 100;
+
+                var total = await _context.Kitaplar.CountAsync();
+
+                var kitaplar = await _context.Kitaplar
+                    .OrderBy(k => k.Id)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var hasMore = page * pageSize < total;
+
+                return Ok(new { 
+                    success = true, 
+                    total, 
+                    page, 
+                    pageSize, 
+                    hasMore,
+                    data = kitaplar 
+                });
             }
             catch (System.Exception ex)
             {

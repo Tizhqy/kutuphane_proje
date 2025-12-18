@@ -21,13 +21,13 @@ namespace ktphnAPI.Models
         public string Sifre { get; set; } = string.Empty;
 
         [Column("telefon")]
-        public string? Telefon { get; set; } = string.Empty;
+        public string? Telefon { get; set; }
 
         [Column("ogrenci_no")]
-        public string? OgrenciNo { get; set; } = string.Empty;
+        public string? OgrenciNo { get; set; }
 
         [Column("durum")]
-        public string? Durum { get; set; } = string.Empty;
+        public string? Durum { get; set; }
 
         [Column("kayit_tarihi")]
         public DateTime? KayitTarihi { get; set; }

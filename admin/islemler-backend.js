@@ -1,7 +1,8 @@
-document.addEventListener('DOMContentLoaded', function () {
-    islemGetir();
-});
-function escapeHtml(str) {//copilot baba onerdi burayi  
+let currentPage = 1;
+const pageSize = 20;
+let hasMore = false;
+
+function escapeHtml(str) {
     if (str === null || str === undefined) return '';
     return String(str)
         .replace(/&/g, '&amp;')
@@ -11,12 +12,15 @@ function escapeHtml(str) {//copilot baba onerdi burayi
         .replace(/'/g, '&#039;');
 }
 
-async function islemGetir() {
-    const apiurl = 'http://localhost:5165/api/islemler';
+async function islemGetir(page = 1, append = false) {
+    const durumFilter = document.getElementById('durumFilter')?.value || '';
+    let apiurl = `http://localhost:5165/api/islemler?page=${page}&pageSize=${pageSize}`;
+    if (durumFilter) apiurl += `&durum=${encodeURIComponent(durumFilter)}`;
+    
     const tblgovde = document.getElementById('islemlerTableGovde');
     if (!tblgovde) return console.warn('Tablo govdesi bulunamadi: islemlerTableGovde');
 
-    tblgovde.innerHTML = '<tr><td colspan="11">Yüklèniyor...</td></tr>';
+    if (!append) tblgovde.innerHTML = '<tr><td colspan="11">Yükleǹiyor...</td></tr>';
 
     try {
         const token = localStorage.getItem('kutuphane_token');
@@ -41,23 +45,31 @@ async function islemGetir() {
         }
 
         const rows = [];
-        data.forEach(islem => {
+        const startNum = (page - 1) * pageSize;
+        data.forEach((islem, idx) => {
+            const rowNum = startNum + idx + 1;
             let durumSinifi = 'status borrowed-out';
             let durumYazisi = 'Ödünçte';
-            let durumEylem = 'İade Al';
+            let durumEylem = 'Detay';
 
             if (islem.durum === 'iade') {
                 durumSinifi = 'status returned';
                 durumYazisi = 'İade';
-                durumEylem = 'Detay';
-            } else if (islem.durum === 'geciken') {
-                durumSinifi = 'status overdue';
-                durumYazisi = 'Geciken';
-                durumEylem = 'Hatırlat';
-            } else if (islem.durum === 'bekliyor'){
+            } else if (islem.durum === 'rezervasyon') {
                 durumSinifi = 'status pending';
-                durumYazisi = 'Bekliyor';
-                durumEylem = 'Onayla';
+                durumYazisi = 'Rezervasyon';
+            } else if (islem.durum === 'odunc') {
+                // Check if overdue (14 days)
+                const alimDate = new Date(islem.alimTarihi);
+                const today = new Date();
+                const diffDays = Math.floor((today - alimDate) / (1000 * 60 * 60 * 24));
+                if (diffDays > 14) {
+                    durumSinifi = 'status overdue';
+                    durumYazisi = `Geciken (${diffDays - 14} gün)`;
+                } else {
+                    durumSinifi = 'status borrowed-out';
+                    durumYazisi = 'Ödünçte';
+                }
             }
             
 
@@ -67,35 +79,48 @@ async function islemGetir() {
             const alim = islem.alimTarihi ?? islem.alim_tarihi ?? '';
             const iade = islem.iadeTarihi ?? islem.iade_tarihi ?? '';
             const metadata = islem.metadata ?? islem.Metadata ?? '';
-            const islemTuru = islem.islemTuru ?? islem.islem_turu ?? islem.İslemTuru ?? islem.IslemTuru ?? '';
+            const islemTuru = islem.islemTuru ?? islem.islem_turu ?? islem.İslemTuru ?? islem.IslemTuru ?? '';
+
+            let metaDisplay = '-';
+            try {
+                if (metadata) {
+                    const meta = JSON.parse(metadata);
+                    metaDisplay = meta.action || meta.note || 'Log';
+                }
+            } catch (e) { metaDisplay = 'Log'; }
+
+            const shortUA = userAgent.split(' ')[0] || '-';
 
             rows.push(`
                 <tr>
-                    <td title="${escapeHtml(islem.id)}">${escapeHtml(islem.id)}</td>
-                    <td title="${escapeHtml(islem.uyeId)}">${escapeHtml(islem.uyeId)}</td>
-                    <td title="${escapeHtml(islem.kitapId)}">${escapeHtml(islem.kitapId)}</td>
-                    <td title="${escapeHtml(islemTuru)}">${escapeHtml(islemTuru)}</td>
-                    <td title="${escapeHtml(metadata)}">${escapeHtml(metadata)}</td>
-                    <td title="${escapeHtml(userAgent)}">${escapeHtml(userAgent)}</td>
-                    <td title="${escapeHtml(ip)}">${escapeHtml(ip)}</td>
-                    <td title="${escapeHtml(alim)}">${escapeHtml(alim)}</td>
-                    <td title="${escapeHtml(iade)}">${escapeHtml(iade)}</td>
-                    <td title="${escapeHtml(durumYazisi)}"><span class="${durumSinifi}">${durumYazisi}</span></td>
+                    <td>${rowNum}</td>
+                    <td><strong>${escapeHtml(islem.uyeAdSoyad)}</strong><br><small>#${escapeHtml(islem.uyeId)}</small></td>
+                    <td><strong>${escapeHtml(islem.kitapAdi)}</strong><br><small>${escapeHtml(islem.yazar)}</small></td>
+                    <td>${escapeHtml(islemTuru)}</td>
+                    <td><button class="btn-edit" onclick='showMetadata(${JSON.stringify(metadata)})'>Göster</button></td>
+                    <td title="${escapeHtml(userAgent)}">${escapeHtml(shortUA)}</td>
+                    <td>${escapeHtml(ip)}</td>
+                    <td>${alim}</td>
+                    <td>${iade}</td>
+                    <td><span class="${durumSinifi}">${durumYazisi}</span></td>
                     <td>
-                        <button class="btn-edit">${durumEylem}</button>
-                        <button class="btn-delete">Sil</button>
+                        <button class="btn-edit" onclick="islemDetay(${islem.id})">${durumEylem}</button>
                     </td>
                 </tr>
             `);
         });
 
-        tblgovde.innerHTML = rows.join('');//innerHTML+= e gore daha iyi    
-            tblgovde.innerHTML = rows.join('');//innerHTML+= e gore daha iyi    
+        if (append) tblgovde.insertAdjacentHTML('beforeend', rows.join('')); else tblgovde.innerHTML = rows.join('');
 
-            // Update scroller button visibility after rendering rows
-            try {
-                updateTableScrollerVisibility();
-            } catch (e) { /* ignore if scroller not initialized */ }
+        currentPage = page;
+        hasMore = !!payload.hasMore;
+
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        if (loadMoreBtn) {
+            if (hasMore) loadMoreBtn.style.display = 'block'; else loadMoreBtn.style.display = 'none';
+        }
+
+        try { updateTableScrollerVisibility(); } catch (e) { /* ignore */ }
 
     } catch (error) {
         console.error('Hata olustu:', error);
@@ -211,4 +236,39 @@ document.addEventListener('DOMContentLoaded', () => {
     ensureTableScroller();
 });
 
+function loadMore() {
+    islemGetir(currentPage + 1, true);
+}
+
+function filterChanged() {
+    currentPage = 1;
+    const durum = document.getElementById('durumFilter')?.value || '';
+    islemGetir(1, false);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    islemGetir(1, false);
+});
+
+function showMetadata(metaStr) {
+    const modal = document.getElementById('metadataModal');
+    const content = document.getElementById('metadataContent');
+    
+    if (!metaStr || metaStr === '-') {
+        content.textContent = 'Metadata bulunamadı.';
+    } else {
+        try {
+            const parsed = JSON.parse(metaStr);
+            content.textContent = JSON.stringify(parsed, null, 2);
+        } catch (e) {
+            content.textContent = metaStr;
+        }
+    }
+    
+    modal.style.display = 'flex';
+}
+
+function closeMetadataModal() {
+    document.getElementById('metadataModal').style.display = 'none';
+}
 

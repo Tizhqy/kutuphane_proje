@@ -24,13 +24,13 @@ namespace ktphnAPI.Models
         public string Kategori { get; set; } = string.Empty;
 
         [Column("sayfa_sayisi")]
-        public int SayfaSayisi { get; set; }
+        public int? SayfaSayisi { get; set; }
 
         [Column("yayin_yili")]
-        public int YayinYili { get; set; }
+        public int? YayinYili { get; set; }
 
         [Column("durum")]
-        public string Durum { get; set; } = string.Empty;
+        public string Durum { get; set; } = "musait";
 
         [Column("ekleme_tarihi")]
         public DateTime EklemeTarihi { get; set; }

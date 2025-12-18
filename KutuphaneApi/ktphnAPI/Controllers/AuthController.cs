@@ -10,6 +10,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ktphnAPI.Controllers
 {
@@ -28,20 +29,40 @@ namespace ktphnAPI.Controllers
         }
 
         [HttpPost("register")]
+        [EnableRateLimiting("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto istek)
         {
-            // Validasyon
-            if (string.IsNullOrWhiteSpace(istek.Email) || 
-                string.IsNullOrWhiteSpace(istek.Sifre) ||
-                string.IsNullOrWhiteSpace(istek.Ad) ||
-                string.IsNullOrWhiteSpace(istek.Soyad))
+            // Model validasyonu
+            if (!ModelState.IsValid)
             {
-                return BadRequest(new { mesaj = "Ad, soyad, email ve şifre zorunludur." });
+                var errors = ModelState
+                    .Where(x => x.Value?.Errors.Count > 0)
+                    .SelectMany(x => x.Value!.Errors)
+                    .Select(x => x.ErrorMessage)
+                    .ToList();
+                return BadRequest(new { mesaj = "Validasyon hatası", hatalar = errors });
+            }
+
+            // Email format kontrolü (ekstra güvenlik için)
+            if (!System.Text.RegularExpressions.Regex.IsMatch(istek.Email, 
+                @"^[^@\s]+@[^@\s]+\.[^@\s]+$", 
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+            {
+                return BadRequest(new { mesaj = "Geçerli bir email adresi giriniz." });
+            }
+
+            // Şifre güçlülük kontrolü (ekstra güvenlik için)
+            if (!System.Text.RegularExpressions.Regex.IsMatch(istek.Sifre, 
+                @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$"))
+            {
+                return BadRequest(new { 
+                    mesaj = "Şifre en az bir büyük harf, bir küçük harf ve bir rakam içermelidir." 
+                });
             }
 
             // Email zaten var mı?
             var mevcutUye = await _context.Uyeler
-                .FirstOrDefaultAsync(u => u.Email == istek.Email);
+                .FirstOrDefaultAsync(u => u.Email == istek.Email.ToLower().Trim());
 
             if (mevcutUye != null)
             {
@@ -51,11 +72,13 @@ namespace ktphnAPI.Controllers
             // Yeni user oluştur
             var yeniUye = new Uye
             {
-                AdSoyad = $"{istek.Ad} {istek.Soyad}",
-                Email = istek.Email,
+                AdSoyad = $"{istek.Ad.Trim()} {istek.Soyad.Trim()}",
+                Email = istek.Email.ToLower().Trim(), // Email'i küçük harfe çevir
                 Sifre = BCrypt.Net.BCrypt.HashPassword(istek.Sifre),  // Hash'le
                 Durum = "aktif",
-                KayitTarihi = System.DateTime.Now
+                KayitTarihi = System.DateTime.UtcNow,
+                OgrenciNo = null,  // Boş string yerine null kullan (unique constraint için)
+                Telefon = null
             };
 
             _context.Uyeler.Add(yeniUye);
@@ -85,6 +108,7 @@ namespace ktphnAPI.Controllers
         }
 
         [HttpPost("login")]
+        [EnableRateLimiting("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto istek)
         {
             var uye = await _context.Uyeler
@@ -127,6 +151,17 @@ namespace ktphnAPI.Controllers
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto istek)
         {
+            // Model validasyonu
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState
+                    .Where(x => x.Value?.Errors.Count > 0)
+                    .SelectMany(x => x.Value!.Errors)
+                    .Select(x => x.ErrorMessage)
+                    .ToList();
+                return BadRequest(new { mesaj = "Validasyon hatası", hatalar = errors });
+            }
+
             var uyeIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(uyeIdClaim) || !int.TryParse(uyeIdClaim, out int uyeId))
             {
@@ -144,9 +179,13 @@ namespace ktphnAPI.Controllers
                 return BadRequest(new { mesaj = "Mevcut şifre yanlış!" });
             }
 
-            if (istek.YeniSifre.Length < 6)
+            // Şifre güçlülük kontrolü (ekstra güvenlik için)
+            if (!System.Text.RegularExpressions.Regex.IsMatch(istek.YeniSifre, 
+                @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$"))
             {
-                return BadRequest(new { mesaj = "Yeni şifre en az 6 karakter olmalıdır!" });
+                return BadRequest(new { 
+                    mesaj = "Yeni şifre en az bir büyük harf, bir küçük harf ve bir rakam içermelidir!" 
+                });
             }
 
             uye.Sifre = BCrypt.Net.BCrypt.HashPassword(istek.YeniSifre);

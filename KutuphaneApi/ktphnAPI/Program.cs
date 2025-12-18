@@ -4,16 +4,69 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using ktphnAPI.Data;
+using ktphnAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using ktphnAPI.Utilities;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHostedService<CezaHesaplaPeakService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+// Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    // Global rate limit
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 100, // 100 istek
+                Window = TimeSpan.FromMinutes(1) // 1 dakika içinde
+            }));
+
+    // Login endpoint için daha sıkı limit (brute force koruması)
+    options.AddPolicy<string>("login", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 5, // 5 istek
+                Window = TimeSpan.FromMinutes(1) // 1 dakika içinde
+            }));
+
+    // Register endpoint için limit
+    options.AddPolicy<string>("register", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 3, // 3 istek
+                Window = TimeSpan.FromMinutes(10) // 10 dakika içinde
+            }));
+
+    // Rate limit aşıldığında dönecek response
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.StatusCode = 429; // Too Many Requests
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            success = false,
+            mesaj = "Çok fazla istek gönderildi. Lütfen daha sonra tekrar deneyin."
+        }, cancellationToken);
+    };
+});
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
@@ -89,6 +142,8 @@ else
 }
 
 app.UseCors("izinVer");
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();

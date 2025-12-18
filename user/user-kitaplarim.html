@@ -29,6 +29,7 @@
         .btn-return:hover { background: #303f9f; }
         .empty-state { text-align: center; padding: 3rem 1rem; color: #666; }
         .loading { text-align: center; padding: 2rem; }
+        .fade-out { opacity: 0; transform: translateY(-6px); transition: opacity .2s ease, transform .2s ease; }
     </style>
 </head>
 
@@ -144,6 +145,7 @@
 
                 if (!data.data || data.data.length === 0) {
                     loadingEl.style.display = 'none';
+                    contentEl.style.display = 'none';
                     emptyEl.style.display = 'block';
                     return;
                 }
@@ -164,13 +166,14 @@
                             <td>${new Date(islem.alimTarihi).toLocaleDateString('tr-TR')}</td>
                             <td>${dueDate.toLocaleDateString('tr-TR')}</td>
                             <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                            <td><button class="btn-return" onclick="returnBook(${islem.id})">İade Et</button></td>
+                            <td><button class="btn-return" onclick="returnBook(${islem.id}, this)">İade Et</button></td>
                         </tr>
                     `);
                 }
 
                 tbody.innerHTML = rows.join('');
                 loadingEl.style.display = 'none';
+                emptyEl.style.display = 'none';
                 contentEl.style.display = 'block';
             } catch (error) {
                 console.error('Kitaplar yükleme hatası:', error);
@@ -216,7 +219,7 @@
             return { statusClass, statusText };
         }
 
-        async function returnBook(islemId) {
+        async function returnBook(islemId, btn) {
             const token = localStorage.getItem('kutuphane_token');
             if (!token) {
                 window.location.href = '../login.html';
@@ -226,6 +229,11 @@
             if (!confirm('Kitabı iade etmek istiyor musunuz?')) return;
 
             try {
+                if (btn) {
+                    btn.disabled = true;
+                    btn.textContent = 'İade ediliyor...';
+                }
+
                 const res = await fetch('http://localhost:5165/api/islemler/iade-et', {
                     method: 'POST',
                     headers: {
@@ -236,11 +244,31 @@
                 });
 
                 if (!res.ok) throw new Error('İade hatası');
-                console.log('Kitap başarıyla iade edildi');
-                loadMyBooks();
+
+                // Satırı yumuşak kaldır; boşaldıysa empty state göster
+                if (btn) {
+                    const row = btn.closest('tr');
+                    if (row) {
+                        row.classList.add('fade-out');
+                        setTimeout(() => {
+                            row.remove();
+                            const tbody = document.getElementById('myBooksTableBody');
+                            if (tbody && tbody.children.length === 0) {
+                                document.getElementById('contentState').style.display = 'none';
+                                document.getElementById('emptyState').style.display = 'block';
+                            }
+                        }, 220);
+                    }
+                }
+
+                showToast('Kitap iade edildi.', 'success');
             } catch (error) {
                 console.error('İade hatası:', error);
                 showToast('Hata: ' + error.message, 'error');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'İade Et';
+                }
             }
         }
     </script>

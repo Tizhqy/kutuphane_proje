@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ktphnAPI.Data;
 using ktphnAPI.Models;
+using ktphnAPI.Services;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -15,20 +16,57 @@ namespace ktphnAPI.Controllers
     public class İslemlerController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IEmailService _emailService;
 
-        public İslemlerController(AppDbContext context)
+        public İslemlerController(AppDbContext context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         [HttpGet]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> Getİslemler()
+        public async Task<IActionResult> Getİslemler([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] string? durum = null, [FromQuery] int? uyeId = null)
         {
             try
             {
-                var islemler = await _context.İslemler.ToListAsync();
-                return Ok(new { success = true, total = islemler.Count, data = islemler });
+                if (page < 1) page = 1;
+                if (pageSize < 1) pageSize = 20;
+                if (pageSize > 100) pageSize = 100;
+
+                var query = _context.İslemler.AsQueryable();
+
+                if (!string.IsNullOrEmpty(durum)) query = query.Where(i => i.Durum == durum);
+                if (uyeId.HasValue) query = query.Where(i => i.UyeId == uyeId.Value);
+
+                var total = await query.CountAsync();
+
+                var islemler = await query
+                    .OrderByDescending(i => i.OlusturmaTarihi)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Join(_context.Kitaplar, i => i.KitapId, k => k.Id, (i, k) => new { Islem = i, Kitap = k })
+                    .Join(_context.Uyeler, ik => ik.Islem.UyeId, u => u.Id, (ik, u) => new
+                    {
+                        ik.Islem.Id,
+                        ik.Islem.UyeId,
+                        UyeAdSoyad = u.AdSoyad,
+                        ik.Islem.KitapId,
+                        KitapAdi = ik.Kitap.KitapAdi,
+                        Yazar = ik.Kitap.Yazar,
+                        ik.Islem.İslemTuru,
+                        ik.Islem.AlimTarihi,
+                        ik.Islem.IadeTarihi,
+                        ik.Islem.Durum,
+                        ik.Islem.UserAgent,
+                        ik.Islem.IpAddress,
+                        ik.Islem.Metadata,
+                        ik.Islem.OlusturmaTarihi
+                    })
+                    .ToListAsync();
+
+                var hasMore = page * pageSize < total;
+                return Ok(new { success = true, total, page, pageSize, hasMore, data = islemler });
             }
             catch (System.Exception ex)
             {
@@ -69,6 +107,18 @@ namespace ktphnAPI.Controllers
  
                 var islemler = await _context.İslemler
                     .Where(i => i.UyeId == uyeId && i.İslemTuru == "odunc" && i.IadeTarihi == null)
+                    .Join(_context.Kitaplar, i => i.KitapId, k => k.Id, (i, k) => new
+                    {
+                        i.Id,
+                        i.UyeId,
+                        i.KitapId,
+                        KitapAdi = k.KitapAdi,
+                        Yazar = k.Yazar,
+                        i.AlimTarihi,
+                        i.IadeTarihi,
+                        i.Durum,
+                        i.İslemTuru
+                    })
                     .ToListAsync();
 
                 return Ok(new { success = true, total = islemler.Count, data = islemler });
@@ -92,7 +142,7 @@ namespace ktphnAPI.Controllers
                 }
 
                 var kitap = await _context.Kitaplar.FindAsync(request.KitapId);
-                if (kitap == null || (kitap.Durum != "mevcut" && kitap.Durum != "musait"))
+                if (kitap == null || kitap.Durum != "musait")
                 {
                     return BadRequest(new { success = false, message = "Kitap mevcut değil!" });
                 }
@@ -122,8 +172,33 @@ namespace ktphnAPI.Controllers
                 };
 
                 _context.İslemler.Add(islem);
+                
+                // Update book status to "odunc" (borrowed)
+                kitap.Durum = "odunc";
+                _context.Kitaplar.Update(kitap);
 
                 await _context.SaveChangesAsync();
+
+                // Mail gönder (kullanıcı bilgilerini al)
+                var uye = await _context.Uyeler.FindAsync(uyeId);
+                if (uye != null && !string.IsNullOrWhiteSpace(uye.Email))
+                {
+                    var iadeTarihi = DateTime.UtcNow.AddDays(14); // 14 gün sonra iade
+                    try
+                    {
+                        await _emailService.SendOduncAlBildirimAsync(
+                            uye.Email,
+                            uye.AdSoyad,
+                            kitap.KitapAdi,
+                            iadeTarihi
+                        );
+                    }
+                    catch (System.Exception mailEx)
+                    {
+                        // Mail hatası işlemi engellemesin, sadece log'la
+                        // Mail gönderilemese bile ödünç alma işlemi başarılı
+                    }
+                }
 
                 return Ok(new { success = true, message = "Kitap başarıyla ödünç alındı.", data = islem });
             }
@@ -163,6 +238,23 @@ namespace ktphnAPI.Controllers
                 islem.Metadata = JsonSerializer.Serialize(meta);
                 _context.İslemler.Update(islem);
 
+                // Başka ödünç kaydı yoksa kitabı mevcut yap
+                var otherLoanExists = await _context.İslemler
+                    .AnyAsync(i => i.KitapId == islem.KitapId && 
+                                   i.İslemTuru == "odunc" && 
+                                   i.IadeTarihi == null && 
+                                   i.Id != islem.Id);
+
+                if (!otherLoanExists)
+                {
+                    var kitap = await _context.Kitaplar.FindAsync(islem.KitapId);
+                    if (kitap != null)
+                    {
+                        kitap.Durum = "musait";
+                        _context.Kitaplar.Update(kitap);
+                    }
+                }
+
                 await _context.SaveChangesAsync();
 
                 return Ok(new { success = true, message = "Kitap başarıyla iade edildi." });
@@ -192,7 +284,7 @@ namespace ktphnAPI.Controllers
 
                 var query = _context.İslemler
                     .Where(i => i.İslemTuru == "odunc" && i.IadeTarihi == null && i.AlimTarihi.HasValue)
-                    .Where(i => i.AlimTarihi.Value.AddDays(14) < DateTime.UtcNow);
+                    .Where(i => i.AlimTarihi != null && i.AlimTarihi.Value.AddDays(14) < DateTime.UtcNow);
 
                 if (!isAdmin && uyeId.HasValue)
                 {

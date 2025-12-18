@@ -20,9 +20,11 @@ namespace ktphnAPI.Controllers
             _context = context;
         }
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Uye>>> GetUyeler()
+        public async Task<ActionResult<IEnumerable<UyeListDto>>> GetUyeler()
         {
             var uyeler = await _context.Uyeler.ToListAsync();
+            var sonuc = new List<UyeListDto>(uyeler.Count);
+
             foreach (var uye in uyeler)
             {
                 var roller = await (from ur in _context.UyeRolleri
@@ -30,13 +32,23 @@ namespace ktphnAPI.Controllers
                                     where ur.UyeId == uye.Id
                                     select r.RolAdi).ToListAsync();
 
-                uye.RolIsimleri = string.Join(", ", roller);
+                var rolIsimleri = string.Join(", ", roller);
+                if (string.IsNullOrWhiteSpace(rolIsimleri)) rolIsimleri = "Öğrenci";
 
-                if (string.IsNullOrEmpty(uye.RolIsimleri))
-                    uye.RolIsimleri = "Öğrenci";
+                sonuc.Add(new UyeListDto
+                {
+                    Id = uye.Id,
+                    AdSoyad = uye.AdSoyad,
+                    Email = uye.Email,
+                    Telefon = uye.Telefon,
+                    OgrenciNo = uye.OgrenciNo,
+                    Durum = uye.Durum,
+                    KayitTarihi = uye.KayitTarihi,
+                    RolIsimleri = rolIsimleri
+                });
             }
 
-            return uyeler;
+            return Ok(sonuc);
         }
     }
 }

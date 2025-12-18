@@ -19,38 +19,125 @@ namespace ktphnAPI.Controllers
         {
             _context = context;
         }
+        // Sadece oturumdaki kullanıcının profilini döndür (şifresiz DTO)
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Uye>>> GetProfile()
+        public async Task<ActionResult<UyeProfileDto>> GetProfile()
         {
-            return await _context.Uyeler.ToListAsync();
-        }
+            var uyeIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(uyeIdClaim) || !int.TryParse(uyeIdClaim, out int uyeId))
+            {
+                return Unauthorized();
+            }
 
-
-        [HttpGet("{id}")]//verdigimiz id deki kisiyi dodnurcke sadece
-        public async Task<ActionResult<Uye>> GetUye(int id)
-        {
-            var uye = await _context.Uyeler.FindAsync(id);
-
+            var uye = await _context.Uyeler.FindAsync(uyeId);
             if (uye == null)
             {
                 return NotFound("Uye bulunamadi.");
             }
 
-            return uye;
+            var roller = await (from ur in _context.UyeRolleri
+                                join r in _context.Roller on ur.RolId equals r.Id
+                                where ur.UyeId == uye.Id
+                                select r.RolAdi).ToListAsync();
+
+            var dto = new UyeProfileDto
+            {
+                Id = uye.Id,
+                AdSoyad = uye.AdSoyad,
+                Email = uye.Email,
+                Telefon = uye.Telefon,
+                OgrenciNo = uye.OgrenciNo,
+                Durum = uye.Durum,
+                KayitTarihi = uye.KayitTarihi,
+                RolIsimleri = string.Join(", ", roller)
+            };
+
+            return Ok(dto);
         }
 
-        [HttpPost]
-        public async Task<ActionResult<Uye>> PostUye(Uye uye)
+
+        [HttpGet("{id}")]//verdigimiz id deki kisiyi dodnurcke sadece
+        public async Task<ActionResult<UyeProfileDto>> GetUye(int id)
         {
-            if (uye.KayitTarihi == null) 
+            var uye = await _context.Uyeler.FindAsync(id);
+            if (uye == null)
+            {
+                return NotFound("Uye bulunamadi.");
+            }
+
+            // Sadece admin ya da kendi profili erişebilsin
+            var uyeIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? string.Empty;
+            var isAdmin = role.Contains("admin");
+            if (!isAdmin && (!int.TryParse(uyeIdClaim, out int authId) || authId != id))
+            {
+                return Forbid();
+            }
+
+            var roller = await (from ur in _context.UyeRolleri
+                                join r in _context.Roller on ur.RolId equals r.Id
+                                where ur.UyeId == uye.Id
+                                select r.RolAdi).ToListAsync();
+
+            var dto = new UyeProfileDto
+            {
+                Id = uye.Id,
+                AdSoyad = uye.AdSoyad,
+                Email = uye.Email,
+                Telefon = uye.Telefon,
+                OgrenciNo = uye.OgrenciNo,
+                Durum = uye.Durum,
+                KayitTarihi = uye.KayitTarihi,
+                RolIsimleri = string.Join(", ", roller)
+            };
+
+            return Ok(dto);
+        }
+
+        // Yeni kullanıcı oluşturmayı sadece admin'e aç; şifreyi hash'le
+        [HttpPost]
+        [Authorize(Roles = "admin")]
+        public async Task<ActionResult<UyeProfileDto>> PostUye(Uye uye)
+        {
+            if (string.IsNullOrWhiteSpace(uye.Sifre))
+            {
+                return BadRequest("Şifre zorunludur.");
+            }
+
+            if (uye.KayitTarihi == null)
             {
                 uye.KayitTarihi = System.DateTime.Now;
             }
-            
+
+            // Boş string'leri null'a çevir (unique constraint için)
+            if (string.IsNullOrWhiteSpace(uye.OgrenciNo))
+            {
+                uye.OgrenciNo = null;
+            }
+            if (string.IsNullOrWhiteSpace(uye.Telefon))
+            {
+                uye.Telefon = null;
+            }
+
+            // Hash password
+            uye.Sifre = BCrypt.Net.BCrypt.HashPassword(uye.Sifre);
+
             _context.Uyeler.Add(uye);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetUye", new { id = uye.Id }, uye);
+            var dto = new UyeProfileDto
+            {
+                Id = uye.Id,
+                AdSoyad = uye.AdSoyad,
+                Email = uye.Email,
+                Telefon = uye.Telefon,
+                OgrenciNo = uye.OgrenciNo,
+                Durum = uye.Durum,
+                KayitTarihi = uye.KayitTarihi,
+                RolIsimleri = string.Empty
+            };
+
+            return CreatedAtAction("GetUye", new { id = uye.Id }, dto);
         }
     }
 }

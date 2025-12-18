@@ -1,8 +1,13 @@
 const BOOK_MAP = {};
+let currentPage = 1;
+let isLoading = false;
+let hasMore = true;
+const pageSize = 20;
 
 document.addEventListener('DOMContentLoaded', function () {
-    kitapGetir();
+    kitapGetir(1, false); // İlk yükleme
     setupModalHandlers();
+    setupInfiniteScroll();
     // Past tarih seçimini engelle
     const dateEl = document.getElementById('reservationDate');
     if (dateEl) {
@@ -11,8 +16,28 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-function kitapGetir() {
-    const apiurl = 'http://localhost:5165/api/kitaplar/public';
+function setupInfiniteScroll() {
+    window.addEventListener('scroll', function() {
+        // Sayfa sonuna yaklaşıldığında yeni kitapları yükle
+        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000) {
+            if (!isLoading && hasMore) {
+                loadMoreBooks();
+            }
+        }
+    });
+}
+
+function loadMoreBooks() {
+    if (isLoading || !hasMore) return;
+    currentPage++;
+    kitapGetir(currentPage, true); // append = true
+}
+
+function kitapGetir(page = 1, append = false) {
+    if (isLoading) return;
+    
+    isLoading = true;
+    const apiurl = `http://localhost:5165/api/kitaplar/public?page=${page}&pageSize=${pageSize}`;
 
     const token = localStorage.getItem('kutuphane_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
@@ -37,10 +62,26 @@ function kitapGetir() {
             return response.json();
         })
         .then(payload => {
-            if (!payload) return;
-            const data = Array.isArray(payload) ? payload : (payload.data ?? []);
+            if (!payload) {
+                isLoading = false;
+                return;
+            }
+            
+            const data = payload.data ?? [];
+            hasMore = payload.hasMore ?? false;
             const tblgovde = document.getElementById('ukitaplarGovde');
-            tblgovde.innerHTML = "";
+            
+            // İlk yüklemede temizle, sonraki yüklemelerde ekle
+            if (!append) {
+                tblgovde.innerHTML = "";
+                currentPage = 1;
+            }
+
+            if (data.length === 0 && !append) {
+                tblgovde.innerHTML = '<p style="text-align: center; padding: 20px;">Henüz kitap bulunmamaktadır.</p>';
+                isLoading = false;
+                return;
+            }
 
             data.forEach(kitap => {
                 // Normalize property names
@@ -81,20 +122,26 @@ function kitapGetir() {
                 tblgovde.innerHTML += satir;
             });
 
-            // Event delegation for buttons to open modal
-            tblgovde.addEventListener('click', function(e) {
-                const btn = e.target.closest('button');
-                if (!btn) return;
-                const id = btn.getAttribute('data-id') || btn.closest('.book-card')?.getAttribute('data-id');
-                if (!id) return;
-                const kitap = BOOK_MAP[id];
-                if (!kitap) return;
-                openKitapModal(kitap);
-            });
+            // Event delegation sadece ilk yüklemede ekle (zaten var olan event listener'lar çalışır)
+            if (!append) {
+                // Event delegation for buttons to open modal
+                tblgovde.addEventListener('click', function(e) {
+                    const btn = e.target.closest('button');
+                    if (!btn) return;
+                    const id = btn.getAttribute('data-id') || btn.closest('.book-card')?.getAttribute('data-id');
+                    if (!id) return;
+                    const kitap = BOOK_MAP[id];
+                    if (!kitap) return;
+                    openKitapModal(kitap);
+                });
+            }
+            
+            isLoading = false;
         })
         .catch(error => {
             console.error('Hata olustu:', error);
             showToast('Backend ile bağlantı olmadı', 'error');
+            isLoading = false;
         });
 }
 
@@ -160,9 +207,9 @@ async function submitReservation() {
             throw new Error(data.message || 'Rezervasyon başarısız');
         }
 
-        showToast('Kitap başarıyla rezerve edildi!', 'success');
-        hideModal();
-        kitapGetir();
+            showToast('Kitap başarıyla rezerve edildi!', 'success');
+            hideModal();
+            kitapGetir(1, false); // İlk sayfadan başla
     } catch (error) {
         console.error('Hata:', error);
         showToast('Hata: ' + error.message, 'error');
@@ -266,8 +313,32 @@ function oduncAl(kitapId) {
     })
     .then(data => {
         if (!data) return;
-        showToast('Kitap başarıyla ödünç alındı!', 'success');
-        kitapGetir();
+        if (data.success !== false) {
+            // Önce lokal olarak kitabın durumunu güncelle (anında görünsün)
+            const kitapCard = document.querySelector(`.book-card[data-id="${kitapId}"]`);
+            if (kitapCard) {
+                const statusEl = kitapCard.querySelector('.book-status');
+                const reserveBtn = kitapCard.querySelector('.btn-reserve');
+                if (statusEl) {
+                    statusEl.textContent = 'Ödünçte';
+                    statusEl.className = 'book-status borrowed';
+                }
+                if (reserveBtn) {
+                    reserveBtn.textContent = 'Rezerve Et';
+                }
+                // BOOK_MAP'i de güncelle
+                if (BOOK_MAP[kitapId]) {
+                    BOOK_MAP[kitapId].durum = 'odunc';
+                }
+            }
+            
+            showToast(data.message || 'Kitap başarıyla ödünç alındı!', 'success');
+            
+            // API'den tüm listeyi arka planda yeniden çek (güncel veri için, await olmadan)
+            kitapGetir(1, false); // İlk sayfadan başla
+        } else {
+            showToast(data.message || 'Ödünç alma başarısız', 'error');
+        }
     })
     .catch(error => {
         console.error('Hata:', error);

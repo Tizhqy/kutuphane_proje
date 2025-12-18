@@ -94,3 +94,75 @@ if (backToLogin) {
     });
 }
 
+// Register Form Submit
+const registerForm = document.getElementById('registerForm');
+if (registerForm) {
+    registerForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const fullname = document.getElementById('fullname').value.trim();
+        const email = document.getElementById('reg_email').value.trim();
+        const password = document.getElementById('reg_password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+
+        // Validasyon
+        if (!fullname || !email || !password) {
+            alert('Lütfen tüm gerekli alanları doldurun!');
+            return;
+        }
+
+        if (password.length < 5) {
+            alert('Şifre en az 5 karakter olmalıdır!');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            alert('Şifreler eşleşmiyor!');
+            return;
+        }
+
+        // Ad Soyad'ı ayır
+        const nameParts = fullname.split(' ');
+        const ad = nameParts[0] || '';
+        const soyad = nameParts.slice(1).join(' ') || nameParts[0];
+
+        const apiUrl = 'http://localhost:5165/api/auth/register';
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    Ad: ad,
+                    Soyad: soyad,
+                    Email: email,
+                    Sifre: password
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                alert(data.mesaj || 'Kayıt sırasında hata oluştu!');
+                return;
+            }
+
+            alert('✅ Kayıt başarılı! Giriş yapabilirsiniz.');
+            
+            // Login formuna dön
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+            const title = document.getElementById('formTitle');
+            if (title) title.textContent = 'Giriş Yapın';
+
+            // Email alanını doldur
+            document.getElementById('email').value = email;
+            document.getElementById('password').focus();
+
+        } catch (error) {
+            console.error('Hata:', error);
+            alert('Sunucuya bağlanılamadı! Backend çalışıyor mu?');
+        }
+    });
+}
+

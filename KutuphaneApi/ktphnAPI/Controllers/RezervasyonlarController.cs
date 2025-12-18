@@ -5,6 +5,8 @@ using ktphnAPI.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using System;
+using Microsoft.Extensions.Logging;
 
 namespace ktphnAPI.Controllers
 { 
@@ -14,10 +16,12 @@ namespace ktphnAPI.Controllers
     public class RezervasyonlarController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly ILogger<RezervasyonlarController> _logger;
 
-        public RezervasyonlarController(AppDbContext context)
+        public RezervasyonlarController(AppDbContext context, ILogger<RezervasyonlarController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         [HttpGet("kitap/{kitapId}")]
@@ -30,10 +34,13 @@ namespace ktphnAPI.Controllers
                     .OrderBy(r => r.BaslangicTarihi)
                     .ToListAsync();
 
+                _logger.LogInformation("Rezervasyon listesi çekildi | KitapId: {KitapId} | Adet: {Count}", kitapId, rezervasyonlar.Count);
+
                 return Ok(new { success = true, total = rezervasyonlar.Count, data = rezervasyonlar });
             }
             catch (System.Exception ex)
             {
+                _logger.LogError(ex, "Rezervasyon listesi alınırken hata | KitapId: {KitapId}", kitapId);
                 return StatusCode(500, new { success = false, message = "Veri alınırken hata oluştu.", detail = ex.Message });
             }
         }
@@ -49,6 +56,15 @@ namespace ktphnAPI.Controllers
                     return Unauthorized(new { success = false, message = "Oturum bulunamadı!" });
                 }
 
+                var today = DateTime.UtcNow.Date;
+                var startDate = request.BaslangicTarihi.Date;
+                var endDate = request.BirisTarihi.Date;
+
+                if (startDate < today)
+                {
+                    return BadRequest(new { success = false, message = "Geçmiş tarih için rezervasyon yapılamaz." });
+                }
+
                 if (request.BaslangicTarihi >= request.BirisTarihi)
                 {
                     return BadRequest(new { success = false, message = "Bitiş tarihi başlangıç tarihinden sonra olmalıdır." });
@@ -58,6 +74,16 @@ namespace ktphnAPI.Controllers
                 if (kitap == null)
                 {
                     return NotFound(new { success = false, message = "Kitap bulunamadı." });
+                }
+
+                var hasOverlap = await _context.Rezervasyonlar.AnyAsync(r =>
+                    r.KitapId == request.KitapId &&
+                    r.Durum == "aktif" &&
+                    !(endDate <= r.BaslangicTarihi.Date || startDate >= r.BirisTarihi.Date));
+
+                if (hasOverlap)
+                {
+                    return Conflict(new { success = false, message = "Bu tarih aralığında aktif bir rezervasyon zaten var." });
                 }
 
                 var reservation = new Rezervasyon
@@ -73,10 +99,14 @@ namespace ktphnAPI.Controllers
                 _context.Rezervasyonlar.Add(reservation);
                 await _context.SaveChangesAsync();
 
+                _logger.LogInformation("Rezervasyon oluşturuldu | RezId: {RezId} | UyeId: {UyeId} | KitapId: {KitapId} | {Start} -> {End}",
+                    reservation.Id, uyeId, request.KitapId, startDate, endDate);
+
                 return Ok(new { success = true, message = "Rezervasyon başarıyla oluşturuldu.", data = reservation });
             }
             catch (System.Exception ex)
             {
+                _logger.LogError(ex, "Rezervasyon oluşturulurken hata | KitapId: {KitapId} | UyeId: {UyeId}", request?.KitapId, User?.Identity?.Name);
                 return StatusCode(500, new { success = false, message = "İşlem sırasında hata oluştu.", detail = ex.Message });
             }
         }
@@ -107,12 +137,13 @@ namespace ktphnAPI.Controllers
             }
             catch (System.Exception ex)
             {
+                _logger.LogError(ex, "Rezervasyon iptali sırasında hata | RezId: {RezId} | UyeId: {UyeId}", id, User?.Identity?.Name);
                 return StatusCode(500, new { success = false, message = "İşlem sırasında hata oluştu.", detail = ex.Message });
             }
         }
 
         [HttpGet("benim-rezervasyonlarim")]
-        public async Task<IActionResult> MyReservations()
+        public async Task<IActionResult> MyReservations([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             try
             {
@@ -122,18 +153,34 @@ namespace ktphnAPI.Controllers
                     return Unauthorized(new { success = false, message = "Oturum bulunamadı!" });
                 }
 
-                var rezervasyonlar = await _context.Rezervasyonlar
-                    .Where(r => r.UyeId == uyeId && r.Durum == "aktif")
+                if (page < 1) page = 1;
+                if (pageSize < 1) pageSize = 10;
+                if (pageSize > 50) pageSize = 50;
+
+                var query = _context.Rezervasyonlar
+                    .Where(r => r.UyeId == uyeId && r.Durum == "aktif");
+
+                var total = await query.CountAsync();
+                var items = await query
                     .OrderBy(r => r.BaslangicTarihi)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
                     .ToListAsync();
 
-                return Ok(new { success = true, total = rezervasyonlar.Count, data = rezervasyonlar });
+                var hasMore = page * pageSize < total;
+
+                _logger.LogInformation("Kullanıcı rezervasyonları çekildi | UyeId: {UyeId} | Sayfa: {Page} | Adet: {Count}", uyeId, page, items.Count);
+
+                return Ok(new { success = true, total, page, pageSize, hasMore, data = items });
             }
             catch (System.Exception ex)
             {
+                _logger.LogError(ex, "Kullanıcı rezervasyonları alınırken hata | UyeId: {UyeId}", User?.Identity?.Name);
                 return StatusCode(500, new { success = false, message = "Veri alınırken hata oluştu.", detail = ex.Message });
             }
         }
+
+        // Rezervasyon işlemleri kitap_islemler'e DB trigger'ları ile loglanacaktır.
     }
 
     public class CreateRezervationRequest

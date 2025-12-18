@@ -6,3 +6,6 @@ obj/
 *.db
 appsettings.Development.json
 *.sql
+PROJE_ANALIZ_VE_ONERILER.md
+TRIGGER_KONTROL_REHBERI.md
+QUICK_START_EMAIL_TESTING.md

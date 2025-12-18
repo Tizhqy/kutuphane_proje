@@ -8,7 +8,7 @@ namespace ktphnAPI.Models
     {
         [Key]
         [Column("islem_id")]
-        public int Id { get; set; }
+        public long Id { get; set; }
 
         [Column("uye_id")]
         public int UyeId { get; set; }
@@ -43,6 +43,10 @@ namespace ktphnAPI.Models
 
         [Column("olusturma_tarihi")]
         public DateTime? OlusturmaTarihi { get; set; }
+
+        // Navigation Properties
+        public virtual Uye Uye { get; set; }
+        public virtual Kitap Kitap { get; set; }
 
     }
 }

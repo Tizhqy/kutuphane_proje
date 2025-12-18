@@ -71,11 +71,11 @@
                     <h3>İşlem Listesi</h3>
                     <div class="table-controls">
                         <input type="text" placeholder="İşlem ara..." class="search-table">
-                        <select class="filter-select">
+                        <select class="filter-select" id="durumFilter" onchange="filterChanged()">
                             <option value="">Tüm İşlemler</option>
-                            <option value="odunc">Ödünç Verilen</option>
-                            <option value="iade">İade Edilen</option>
-                            <option value="geciken">Geciken</option>
+                            <option value="odunc">Ödünç</option>
+                            <option value="iade">İade</option>
+                            <option value="rezervasyon">Rezervasyon</option>
                         </select>
                     </div>
                 </div>
@@ -84,15 +84,15 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>İşlem ID</th>
-                                <th>Üye ID</th>
-                                <th>Kitap ID</th>
+                                <th>ID</th>
+                                <th>Üye Adı</th>
+                                <th>Kitap Adı</th>
                                 <th>İşlem Türü</th>
-                                <th>Metadata</th>
-                                <th>UserAgent</th>
-                                <th>IP_address</th>
-                                <th>Alım Tarihi</th>
-                                <th>İade Tarihi</th>
+                                <th>Detay</th>
+                                <th>Tarayıcı</th>
+                                <th>IP</th>
+                                <th>Alım</th>
+                                <th>İade</th>
                                 <th>Durum</th>
                                 <th>İşlemler</th>
                             </tr>
@@ -101,9 +101,22 @@
                         </tbody>
                     </table>
                 </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button id="loadMoreBtn" class="btn" style="display: none;" onclick="loadMore()">Daha Fazla Yükle</button>
+                </div>
             </div>
         </div>
     </main>
+
+    <!-- Metadata Modal -->
+    <div id="metadataModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:white; padding:30px; border-radius:8px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto;">
+            <h3 style="margin-top:0;">İşlem Detayları</h3>
+            <pre id="metadataContent" style="background:#f5f5f5; padding:15px; border-radius:4px; overflow-x:auto; white-space:pre-wrap; word-wrap:break-word;"></pre>
+            <button onclick="closeMetadataModal()" class="btn" style="margin-top:15px;">Kapat</button>
+        </div>
+    </div>
+
     <footer>
         <p>&copy; 2025 Kütüphane Projesi.</p>
         <a href="mailto:458364@ogr.ktu.edu.tr">458364@ogr.ktu.edu.tr</a>
