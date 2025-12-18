@@ -27,6 +27,63 @@ namespace ktphnAPI.Controllers
             _config = config;
         }
 
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterDto istek)
+        {
+            // Validasyon
+            if (string.IsNullOrWhiteSpace(istek.Email) || 
+                string.IsNullOrWhiteSpace(istek.Sifre) ||
+                string.IsNullOrWhiteSpace(istek.Ad) ||
+                string.IsNullOrWhiteSpace(istek.Soyad))
+            {
+                return BadRequest(new { mesaj = "Ad, soyad, email ve şifre zorunludur." });
+            }
+
+            // Email zaten var mı?
+            var mevcutUye = await _context.Uyeler
+                .FirstOrDefaultAsync(u => u.Email == istek.Email);
+
+            if (mevcutUye != null)
+            {
+                return BadRequest(new { mesaj = "Bu email zaten kayıtlı." });
+            }
+
+            // Yeni user oluştur
+            var yeniUye = new Uye
+            {
+                AdSoyad = $"{istek.Ad} {istek.Soyad}",
+                Email = istek.Email,
+                Sifre = BCrypt.Net.BCrypt.HashPassword(istek.Sifre),  // Hash'le
+                Durum = "aktif",
+                KayitTarihi = System.DateTime.Now
+            };
+
+            _context.Uyeler.Add(yeniUye);
+            await _context.SaveChangesAsync();
+
+            // Default role'ü ata (user/ogrenci)
+            var userRol = await _context.Roller
+                .FirstOrDefaultAsync(r => r.RolAdi == "user" || r.RolAdi == "ogrenci");
+
+            if (userRol != null)
+            {
+                var uyeRol = new UyeRol
+                {
+                    UyeId = yeniUye.Id,
+                    RolId = userRol.Id
+                };
+                _context.UyeRolleri.Add(uyeRol);
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok(new
+            {
+                mesaj = "Kayıt başarılı. Artık giriş yapabilirsiniz.",
+                uyeId = yeniUye.Id,
+                email = yeniUye.Email
+            });
+        }
+
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto istek)
         {

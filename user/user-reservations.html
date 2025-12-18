@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rezervasyonlarım - Kütüphane</title>
+    <link rel="stylesheet" href="../styles/ustyle.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+    (function() {
+        const token = localStorage.getItem('kutuphane_token');
+        if (!token) {
+            window.location.href = '../login.html';
+        }
+    })();
+    </script>
+    <style>
+        .reservations-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
+        .reservation-card { background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .reservation-card h4 { color: #1a237e; margin-bottom: 1rem; }
+        .res-info { font-size: .9rem; color: #666; margin-bottom: .5rem; }
+        .res-dates { background: #f5f5f5; padding: .75rem; border-radius: 5px; margin: .5rem 0; font-size: .85rem; }
+        .btn-cancel { width: 100%; padding: .5rem; background: #c62828; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: .9rem; margin-top: .5rem; }
+        .btn-cancel:hover { background: #b71c1c; }
+        .empty-state { text-align: center; padding: 3rem 1rem; color: #666; }
+        .loading { text-align: center; padding: 2rem; }
+
+        /* basit onay modalı */
+        .confirm-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1500; }
+        .confirm-dialog { background: #fff; padding: 1.5rem; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.2); max-width: 380px; width: 90%; }
+        .confirm-dialog h4 { margin: 0 0 .75rem; color: #1a237e; }
+        .confirm-dialog p { margin: 0 0 1rem; color: #444; }
+        .confirm-actions { display: flex; gap: .75rem; justify-content: flex-end; }
+        .btn-secondary { padding: .6rem 1rem; border: 1px solid #ccc; background: #f5f5f5; border-radius: 8px; cursor: pointer; }
+        .btn-primary { padding: .6rem 1rem; border: none; background: #c62828; color: #fff; border-radius: 8px; cursor: pointer; }
+        .hidden { display: none; }
+
+        /* kaldırma animasyonu */
+        .fade-out { opacity: 0; transform: translateY(-8px); transition: opacity .2s ease, transform .2s ease; }
+        #loadMoreWrap { text-align: center; margin: 1rem 0 2rem; }
+        #loadMoreBtn { padding: .6rem 1rem; border: 1px solid #1a237e; background: #fff; color: #1a237e; border-radius: 8px; cursor: pointer; }
+        #loadMoreBtn:hover { background: #eef2ff; }
+    </style>
+</head>
+
+<body>
+    <header class="user-header">
+        <div class="container">
+            <div class="header-top">
+                <h1 class="logo">
+                    <img src="../images/ktulogo.png" alt="ktu" class="logo-img">
+                    Kütüphane Sistemi
+                </h1>
+                <div class="user-info">
+                    <div class="user-profile" id="userProfile">
+                        <i class="fas fa-user-circle"></i>
+                        <div class="user-meta">
+                            <span class="user-name" id="userName">İsimsiz</span>
+                            <span class="user-role" id="userRole">Öğrenci</span>
+                        </div>
+                        <div class="user-dropdown" id="userDropdown">
+                            <button class="logout-btn" id="logoutBtn">Çıkış Yap</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <nav class="nav">
+                <a href="user-dashboard.html" class="nav-link">
+                    <i class="fas fa-home"></i> Anasayfa
+                </a>
+                <a href="user-kitaplar.html" class="nav-link">
+                    <i class="fas fa-book"></i> Kitap Kataloğu
+                </a>
+                <a href="user-kitaplarim.html" class="nav-link">
+                    <i class="fas fa-bookmark"></i> Kitaplarım
+                </a>
+                <a href="user-reservations.html" class="nav-link active">
+                    <i class="fas fa-calendar-check"></i> Rezervasyonlarım
+                </a>
+                <a href="user-profile.html" class="nav-link">
+                    <i class="fas fa-user"></i> Profilim
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="page-header">
+                <h2><i class="fas fa-calendar-check"></i> Rezervasyonlarım</h2>
+                <p>Kitap almak için yaptığınız rezervasyonlar</p>
+            </div>
+
+            <div id="loadingState" class="loading">
+                <i class="fas fa-spinner fa-spin"></i> Yükleniyor...
+            </div>
+
+            <div id="contentState" style="display: none;">
+                <div id="reservationsGrid" class="reservations-grid"></div>
+                <div id="loadMoreWrap" class="hidden"><button id="loadMoreBtn">Daha Fazla Yükle</button></div>
+            </div>
+
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <i class="fas fa-calendar" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+                <p>Henüz rezervasyon yapmadınız.</p>
+                <a href="user-kitaplar.html" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">Kitap Ara</a>
+            </div>
+        </div>
+    </main>
+
+    <div id="confirmModal" class="confirm-backdrop hidden" role="dialog" aria-modal="true">
+        <div class="confirm-dialog">
+            <h4>Rezervasyonu iptal et?</h4>
+            <p>Bu rezervasyonu iptal etmek istediğinizden emin misiniz?</p>
+            <div class="confirm-actions">
+                <button class="btn-secondary" id="cancelNo">Vazgeç</button>
+                <button class="btn-primary" id="cancelYes">Evet, İptal Et</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Kütüphane Projesi.</p>
+        <a href="mailto:458364@ogr.ktu.edu.tr">458364@ogr.ktu.edu.tr</a>
+        <br>
+        <a href="../anasyafa.html">Anasayfa</a>
+    </footer>
+
+    <script src="user-common.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMyReservations();
+
+            const cancelModal = document.getElementById('confirmModal');
+            const btnNo = document.getElementById('cancelNo');
+            const btnYes = document.getElementById('cancelYes');
+            if (btnNo) btnNo.addEventListener('click', hideCancelModal);
+            if (btnYes) btnYes.addEventListener('click', confirmCancel);
+
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            if (loadMoreBtn) loadMoreBtn.addEventListener('click', () => loadMyReservations(currentPage + 1, true));
+        });
+
+        let pendingCancelId = null;
+        let currentPage = 1;
+        const pageSize = 6;
+        let hasMore = false;
+
+        async function loadMyReservations(page = 1, append = false) {
+            const token = localStorage.getItem('kutuphane_token');
+            if (!token) {
+                window.location.href = '../login.html';
+                return;
+            }
+
+            try {
+                const res = await fetch(`http://localhost:5165/api/rezervasyonlar/benim-rezervasyonlarim?page=${page}&pageSize=${pageSize}` , {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!res.ok) throw new Error('Veri çekme hatası');
+                const data = await res.json();
+
+                const loadingEl = document.getElementById('loadingState');
+                const contentEl = document.getElementById('contentState');
+                const emptyEl = document.getElementById('emptyState');
+                const gridEl = document.getElementById('reservationsGrid');
+                const loadWrap = document.getElementById('loadMoreWrap');
+
+                if ((!data.data || data.data.length === 0) && !append && page === 1) {
+                    loadingEl.style.display = 'none';
+                    emptyEl.style.display = 'block';
+                    return;
+                }
+
+                if (!append) gridEl.innerHTML = '';
+                let cards = [];
+                for (const rez of data.data) {
+                    const start = new Date(rez.baslangicTarihi).toLocaleDateString('tr-TR');
+                    const end = new Date(rez.birisTarihi).toLocaleDateString('tr-TR');
+                    
+                    cards.push(`
+                        <div class="reservation-card" data-rez-id="${rez.id}">
+                            <h4>Kitap #${rez.kitapId}</h4>
+                            <div class="res-info">
+                                <strong>Durum:</strong> <span style="color: #4caf50; font-weight: 600;">${rez.durum === 'aktif' ? 'Aktif' : 'İptal'}</span>
+                            </div>
+                            <div class="res-dates">
+                                <div><strong>Başlangıç:</strong> ${start}</div>
+                                <div><strong>Bitiş:</strong> ${end}</div>
+                            </div>
+                            <button class="btn-cancel" onclick="openCancelModal(${rez.id})">Rezervasyonu İptal Et</button>
+                        </div>
+                    `);
+                }
+
+                if (append) gridEl.insertAdjacentHTML('beforeend', cards.join('')); else gridEl.innerHTML = cards.join('');
+                loadingEl.style.display = 'none';
+                contentEl.style.display = 'grid';
+
+                // pagination state
+                currentPage = page;
+                hasMore = !!data.hasMore;
+                if (hasMore) loadWrap.classList.remove('hidden'); else loadWrap.classList.add('hidden');
+            } catch (error) {
+                console.error('Rezervasyon yükleme hatası:', error);
+                document.getElementById('loadingState').innerHTML = '<p style="color: #c62828;">Veri yüklenirken hata oluştu. Lütfen sayfayı yenileyin.</p>';
+            }
+        }
+
+        function openCancelModal(id) {
+            pendingCancelId = id;
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        function hideCancelModal() {
+            pendingCancelId = null;
+            document.getElementById('confirmModal').classList.add('hidden');
+        }
+
+        async function confirmCancel() {
+            if (!pendingCancelId) { hideCancelModal(); return; }
+            const rezervasyonId = pendingCancelId;
+            const token = localStorage.getItem('kutuphane_token');
+            if (!token) {
+                window.location.href = '../login.html';
+                return;
+            }
+
+            try {
+                const res = await fetch(`http://localhost:5165/api/rezervasyonlar/${rezervasyonId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!res.ok) throw new Error('İptal hatası');
+                showToast('Rezervasyon iptal edildi', 'success');
+                hideCancelModal();
+
+                // kartı yumuşakça kaldır
+                const card = document.querySelector(`[data-rez-id="${rezervasyonId}"]`);
+                if (card) {
+                    card.classList.add('fade-out');
+                    setTimeout(() => {
+                        card.remove();
+                        const gridEl = document.getElementById('reservationsGrid');
+                        if (gridEl && gridEl.children.length === 0) {
+                            document.getElementById('contentState').style.display = 'none';
+                            document.getElementById('emptyState').style.display = 'block';
+                        }
+                    }, 220);
+                }
+
+                // arka planda sayfalama durumunu güncelle (opsiyonel)
+                // loadMyReservations(1, false);
+            } catch (error) {
+                console.error('İptal hatası:', error);
+                showToast('Hata: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,4 +1,28 @@
 // User sayfaları için ortak fonksiyonlar
+
+// Toast notification utility
+window.showToast = function(message, type = 'info', duration = 5000) {
+    console.log(`[${type.toUpperCase()}] ${message}`);
+    
+    if (!document.getElementById('toast-container')) {
+        const container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+        if (container.children.length === 0) container.remove();
+    }, duration);
+};
+
 (function () {
     function initializeUserProfile() {
         const userId = localStorage.getItem('kutuphane_uyeId') || localStorage.getItem('kutuphane_id');

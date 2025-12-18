@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitaplarım - Kütüphane</title>
+    <link rel="stylesheet" href="../styles/ustyle.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+    (function() {
+        const token = localStorage.getItem('kutuphane_token');
+        if (!token) {
+            window.location.href = '../login.html';
+        }
+    })();
+    </script>
+    <style>
+        .my-books-table { width: 100%; border-collapse: collapse; background: white; }
+        .my-books-table th, .my-books-table td { padding: 1rem; text-align: left; border-bottom: 1px solid #eee; }
+        .my-books-table th { background: #1a237e; color: white; font-weight: bold; }
+        .my-books-table tr:hover { background: #f9f9f9; }
+        .status-badge { padding: .25rem .75rem; border-radius: 20px; font-size: .85rem; font-weight: 600; }
+        .status-active { background: #e8f5e9; color: #2e7d32; }
+        .status-warning { background: #fff3e0; color: #e65100; }
+        .status-critical { background: #fce4ec; color: #c2185b; }
+        .status-overdue { background: #ffebee; color: #c62828; }
+        .btn-return { padding: .5rem 1rem; background: #1a237e; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: .9rem; }
+        .btn-return:hover { background: #303f9f; }
+        .empty-state { text-align: center; padding: 3rem 1rem; color: #666; }
+        .loading { text-align: center; padding: 2rem; }
+    </style>
+</head>
+
+<body>
+    <header class="user-header">
+        <div class="container">
+            <div class="header-top">
+                <h1 class="logo">
+                    <img src="../images/ktulogo.png" alt="ktu" class="logo-img">
+                    Kütüphane Sistemi
+                </h1>
+                <div class="user-info">
+                    <div class="user-profile" id="userProfile">
+                        <i class="fas fa-user-circle"></i>
+                        <div class="user-meta">
+                            <span class="user-name" id="userName">İsimsiz</span>
+                            <span class="user-role" id="userRole">Öğrenci</span>
+                        </div>
+                        <div class="user-dropdown" id="userDropdown">
+                            <button class="logout-btn" id="logoutBtn">Çıkış Yap</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <nav class="nav">
+                <a href="user-dashboard.html" class="nav-link">
+                    <i class="fas fa-home"></i> Anasayfa
+                </a>
+                <a href="user-kitaplar.html" class="nav-link">
+                    <i class="fas fa-book"></i> Kitap Kataloğu
+                </a>
+                <a href="user-kitaplarim.html" class="nav-link active">
+                    <i class="fas fa-bookmark"></i> Kitaplarım
+                </a>
+                <a href="user-reservations.html" class="nav-link">
+                    <i class="fas fa-calendar-check"></i> Rezervasyonlarım
+                </a>
+                <a href="user-profile.html" class="nav-link">
+                    <i class="fas fa-user"></i> Profilim
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="page-header">
+                <h2><i class="fas fa-bookmark"></i> Ödünç Aldığım Kitaplar</h2>
+                <p>Şu anda ödünç aldığınız kitaplar</p>
+            </div>
+
+            <div id="loadingState" class="loading">
+                <i class="fas fa-spinner fa-spin"></i> Yükleniyor...
+            </div>
+
+            <div id="contentState" style="display: none;">
+                <table class="my-books-table">
+                    <thead>
+                        <tr>
+                            <th>Kitap Adı</th>
+                            <th>Yazar</th>
+                            <th>Ödünç Alındığı Tarih</th>
+                            <th>İade Tarihi</th>
+                            <th>Durum</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="myBooksTableBody">
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <i class="fas fa-book" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+                <p>Henüz ödünç aldığınız kitap bulunmamaktadır.</p>
+                <a href="user-kitaplar.html" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">Kitap Ara</a>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Kütüphane Projesi.</p>
+        <a href="mailto:458364@ogr.ktu.edu.tr">458364@ogr.ktu.edu.tr</a>
+        <br>
+        <a href="../anasyafa.html">Anasayfa</a>
+    </footer>
+
+    <script src="user-common.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMyBooks();
+        });
+
+        async function loadMyBooks() {
+            const token = localStorage.getItem('kutuphane_token');
+            if (!token) {
+                window.location.href = '../login.html';
+                return;
+            }
+
+            try {
+                const res = await fetch('http://localhost:5165/api/islemler/benim-kitaplarim', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!res.ok) throw new Error('Veri çekme hatası');
+                const data = await res.json();
+                
+                const loadingEl = document.getElementById('loadingState');
+                const contentEl = document.getElementById('contentState');
+                const emptyEl = document.getElementById('emptyState');
+                const tbody = document.getElementById('myBooksTableBody');
+
+                if (!data.data || data.data.length === 0) {
+                    loadingEl.style.display = 'none';
+                    emptyEl.style.display = 'block';
+                    return;
+                }
+
+                // Kitap bilgilerini render et
+                let rows = [];
+                for (const islem of data.data) {
+                    const daysRemaining = calculateDaysRemaining(islem.alimTarihi);
+                    const { statusClass, statusText } = getStatusInfo(daysRemaining);
+                    
+                    const dueDate = new Date(islem.alimTarihi);
+                    dueDate.setDate(dueDate.getDate() + 14);
+
+                    rows.push(`
+                        <tr>
+                            <td><strong>${islem.kitapAdi || 'Bilinmiyor'}</strong></td>
+                            <td>${islem.yazar || 'Bilinmiyor'}</td>
+                            <td>${new Date(islem.alimTarihi).toLocaleDateString('tr-TR')}</td>
+                            <td>${dueDate.toLocaleDateString('tr-TR')}</td>
+                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                            <td><button class="btn-return" onclick="returnBook(${islem.id})">İade Et</button></td>
+                        </tr>
+                    `);
+                }
+
+                tbody.innerHTML = rows.join('');
+                loadingEl.style.display = 'none';
+                contentEl.style.display = 'block';
+            } catch (error) {
+                console.error('Kitaplar yükleme hatası:', error);
+                document.getElementById('loadingState').innerHTML = '<p style="color: #c62828;">Veri yüklenirken hata oluştu. Lütfen sayfayı yenileyin.</p>';
+            }
+        }
+
+        /**
+         * İade tarihine kaç gün kaldığını hesapla
+         * @param {string} alimTarihi - Ödünç alınma tarihi
+         * @returns {number} Pozitif = gün kaldı, Negatif = gecikme
+         */
+        function calculateDaysRemaining(alimTarihi) {
+            const alim = new Date(alimTarihi);
+            const dueDate = new Date(alim.getTime() + 14 * 24 * 60 * 60 * 1000);
+            const now = new Date();
+            return Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+        }
+
+        /**
+         * Kalan güne göre status bilgisini döndür
+         * @param {number} daysRemaining - Kalan gün sayısı
+         * @returns {Object} { statusClass: string, statusText: string }
+         */
+        function getStatusInfo(daysRemaining) {
+            let statusClass = 'status-active';
+            let statusText = 'Aktif';
+
+            if (daysRemaining < 0) {
+                // Gecikmiş
+                statusClass = 'status-overdue';
+                statusText = `${Math.abs(daysRemaining)} gün gecikti`;
+            } else if (daysRemaining <= 3) {
+                // Kritik (3 gün veya daha az)
+                statusClass = 'status-critical';
+                statusText = `${daysRemaining} gün kaldı (KRİTİK)`;
+            } else if (daysRemaining <= 7) {
+                // Uyarı (3-7 gün)
+                statusClass = 'status-warning';
+                statusText = `${daysRemaining} gün kaldı`;
+            }
+
+            return { statusClass, statusText };
+        }
+
+        async function returnBook(islemId) {
+            const token = localStorage.getItem('kutuphane_token');
+            if (!token) {
+                window.location.href = '../login.html';
+                return;
+            }
+
+            if (!confirm('Kitabı iade etmek istiyor musunuz?')) return;
+
+            try {
+                const res = await fetch('http://localhost:5165/api/islemler/iade-et', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ islemId })
+                });
+
+                if (!res.ok) throw new Error('İade hatası');
+                console.log('Kitap başarıyla iade edildi');
+                loadMyBooks();
+            } catch (error) {
+                console.error('İade hatası:', error);
+                showToast('Hata: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>

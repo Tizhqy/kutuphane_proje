@@ -3,6 +3,12 @@ const BOOK_MAP = {};
 document.addEventListener('DOMContentLoaded', function () {
     kitapGetir();
     setupModalHandlers();
+    // Past tarih seçimini engelle
+    const dateEl = document.getElementById('reservationDate');
+    if (dateEl) {
+        const today = new Date().toISOString().split('T')[0];
+        dateEl.setAttribute('min', today);
+    }
 });
 
 function kitapGetir() {
@@ -16,7 +22,7 @@ function kitapGetir() {
             console.log('API Response status:', response.status);
             if (response.status === 401) {
                 console.error('401 Unauthorized - Token geçersiz veya yok');
-                alert('Oturum süreniz doldu. Lütfen yeniden giriş yapın.');
+                showToast('Oturum süreniz doldu. Lütfen yeniden giriş yapın.', 'error');
                 window.location.href = '../login.html';
                 return null;
             }
@@ -24,7 +30,7 @@ function kitapGetir() {
                 console.error('403 Forbidden - Yetki yok');
                 console.log('Token:', localStorage.getItem('kutuphane_token'));
                 console.log('Rol:', localStorage.getItem('kutuphane_rol'));
-                alert('Bu alan için yetkiniz yok.');
+                showToast('Bu alan için yetkiniz yok.', 'error');
                 return null;
             }
             if (!response.ok) throw new Error('Sunucu hatası: ' + response.status);
@@ -63,7 +69,7 @@ function kitapGetir() {
                             <h4 class="book-title">${kitap.kitapAdi}</h4>
                             <p class="book-author">${kitap.yazar}</p>
                             <p class="book-category">${kitap.kategori}</p>
-                            <span class="book-${durumSinifi}">${durumYazisi}</span>
+                            <span class="book-status ${durumSinifi}">${durumYazisi}</span>
                         </div>
                         <div class="book-actions">
                             <button class="btn-reserve" data-id="${id}">${rezerveYazisi}</button>
@@ -88,7 +94,7 @@ function kitapGetir() {
         })
         .catch(error => {
             console.error('Hata olustu:', error);
-            alert('Backend ile baglanti olmadi');
+            showToast('Backend ile bağlantı olmadı', 'error');
         });
 }
 
@@ -113,7 +119,13 @@ function setupModalHandlers() {
 async function submitReservation() {
     const dateEl = document.getElementById('reservationDate');
     const date = dateEl?.value;
-    if (!date) { alert('Lütfen bir tarih seçin.'); return; }
+    if (!date) { showToast('Lütfen bir tarih seçin.', 'warning'); return; }
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (date < todayStr) {
+        showToast('Geçmiş tarih için rezervasyon yapılamaz.', 'error');
+        return;
+    }
 
     const startDate = new Date(date);
     const endDate = new Date(startDate);
@@ -124,7 +136,7 @@ async function submitReservation() {
 
     const token = localStorage.getItem('kutuphane_token');
     if (!token) {
-        alert('Oturum süresi doldu.');
+        showToast('Oturum süresi doldu.', 'error');
         window.location.href = '../login.html';
         return;
     }
@@ -148,12 +160,12 @@ async function submitReservation() {
             throw new Error(data.message || 'Rezervasyon başarısız');
         }
 
-        alert('Kitap başarıyla rezerve edildi!');
+        showToast('Kitap başarıyla rezerve edildi!', 'success');
         hideModal();
         kitapGetir();
     } catch (error) {
         console.error('Hata:', error);
-        alert('Hata: ' + error.message);
+        showToast('Hata: ' + error.message, 'error');
     }
 }
 
@@ -220,7 +232,7 @@ function hideModal() {
 function oduncAl(kitapId) {
     const token = localStorage.getItem('kutuphane_token');
     if (!token) {
-        alert('Oturum expired. Lütfen yeniden giriş yapın.');
+        showToast('Oturum süresi doldu. Lütfen yeniden giriş yapın.', 'error');
         window.location.href = '../login.html';
         return;
     }
@@ -237,12 +249,12 @@ function oduncAl(kitapId) {
     })
     .then(response => {
         if (response.status === 401) {
-            alert('Oturum süreniz doldu. Lütfen yeniden giriş yapın.');
+            showToast('Oturum süreniz doldu. Lütfen yeniden giriş yapın.', 'error');
             window.location.href = '../login.html';
             return null;
         }
         if (response.status === 403) {
-            alert('Bu işlem için yetkiniz yok.');
+            showToast('Bu işlem için yetkiniz yok.', 'error');
             return null;
         }
         if (!response.ok) {
@@ -254,11 +266,11 @@ function oduncAl(kitapId) {
     })
     .then(data => {
         if (!data) return;
-        alert('Kitap başarıyla ödünç alındı!');
+        showToast('Kitap başarıyla ödünç alındı!', 'success');
         kitapGetir();
     })
     .catch(error => {
         console.error('Hata:', error);
-        alert('Hata: ' + error.message);
+        showToast('Hata: ' + error.message, 'error');
     });
 }

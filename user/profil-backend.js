@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     const girisYapanID = localStorage.getItem('kutuphane_id');
     if (!girisYapanID) {
-        alert("Lütfen önce giriş yapın!");
+        showToast('Lütfen önce giriş yapın!', 'warning');
         window.location.href = 'login.html';
         return;
     }
@@ -101,7 +101,7 @@ function profilBilgileriniGetir(id) {
         })
         .catch(error => {
             console.error('Hata:', error);
-            alert('Profil yüklenirken hata oluştu.');
+            showToast('Profil yüklenirken hata oluştu.', 'error');
         });
 }
 function cikisYap() {

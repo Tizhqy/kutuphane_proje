@@ -11,7 +11,11 @@
     (function() {
         const token = localStorage.getItem('kutuphane_token');
         if (!token) {
-            alert('Lütfen önce giriş yapın!');
+            if (window.showToast) {
+                showToast('Lütfen önce giriş yapın!', 'warning');
+            } else {
+                console.warn('Lütfen önce giriş yapın!');
+            }
             window.location.href = '../login.html';
         }
     })();
