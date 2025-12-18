@@ -53,14 +53,20 @@
                             <div class="stat-number">0</div>
                             <div class="stat-label">Toplam Kitap</div>
                         </div>
-                        <div class="stat-card available">
-                            <div class="stat-number">0</div>
-                            <div class="stat-label">Mevcut Kitap</div>
-                        </div>
                         <div class="stat-card">
                             <div class="stat-number">0</div>
                             <div class="stat-label">Ödünç Verilen</div>
                         </div>
+                        <div class="stat-card available">
+                            <div class="stat-number">0</div>
+                            <div class="stat-label">Mevcut Kitap</div>
+                        </div>
+                        <a href="gec.html" style="text-decoration: none;">
+                            <div class="stat-card overdue">
+                                <div class="stat-number">0</div>
+                                <div class="stat-label">Geç Kalan (Ceza)</div>
+                            </div>
+                        </a>
                     </div>
                 </div>
 
@@ -69,11 +75,14 @@
                         <h3>Kitap Listesi</h3>
                         <div class="table-controls">
                             <input type="text" placeholder="Kitap ara..." class="search-table">
-                            <select class="filter-select">
+                            <select class="filter-select" id="kategoriBilim">
                                 <option value="">Tüm Kategoriler</option>
-                                <option value="roman">A</option>
-                                <option value="bilim">B</option>
-                                <option value="tarih">C</option>
+                            </select>
+                            <select class="filter-select" id="durumFiltresi">
+                                <option value="">Tüm Durumlar</option>
+                                <option value="mevcut">Mevcut</option>
+                                <option value="odunc">Ödünçte</option>
+                                <option value="bakim">Bakımda</option>
                             </select>
                         </div>
                     </div>

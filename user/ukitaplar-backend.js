@@ -3,11 +3,15 @@ let currentPage = 1;
 let isLoading = false;
 let hasMore = true;
 const pageSize = 20;
+let currentSearchQuery = '';
+let currentKategoriFilter = '';
+let currentDurumFilter = '';
 
 document.addEventListener('DOMContentLoaded', function () {
     kitapGetir(1, false); // İlk yükleme
     setupModalHandlers();
     setupInfiniteScroll();
+    setupSearchHandlers();
     // Past tarih seçimini engelle
     const dateEl = document.getElementById('reservationDate');
     if (dateEl) {
@@ -30,7 +34,223 @@ function setupInfiniteScroll() {
 function loadMoreBooks() {
     if (isLoading || !hasMore) return;
     currentPage++;
-    kitapGetir(currentPage, true); // append = true
+    if (currentSearchQuery || currentKategoriFilter || currentDurumFilter) {
+        searchKitaplar(currentPage, true);
+    } else {
+        kitapGetir(currentPage, true); // append = true
+    }
+}
+
+function setupSearchHandlers() {
+    // Ana header'daki arama kutusu
+    const headerSearchInput = document.querySelector('.search-input');
+    if (headerSearchInput) {
+        headerSearchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const query = this.value.trim();
+                currentSearchQuery = query;
+                currentPage = 1;
+                if (query) {
+                    searchKitaplar(1, false);
+                } else {
+                    kitapGetir(1, false);
+                }
+            }
+        });
+    }
+
+    // Katalog sayfasındaki arama input'u
+    const catalogSearchInput = document.querySelector('.catalog-search-input');
+    if (catalogSearchInput) {
+        catalogSearchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const query = this.value.trim();
+                currentSearchQuery = query;
+                currentPage = 1;
+                if (query) {
+                    searchKitaplar(1, false);
+                } else {
+                    kitapGetir(1, false);
+                }
+            }
+        });
+    }
+
+    // Katalog sayfasındaki arama butonu
+    const searchBtn = document.querySelector('.search-btn');
+    if (searchBtn) {
+        searchBtn.addEventListener('click', function() {
+            const query = document.querySelector('.catalog-search-input')?.value?.trim() || '';
+            currentSearchQuery = query;
+            currentPage = 1;
+            if (query) {
+                searchKitaplar(1, false);
+            } else {
+                kitapGetir(1, false);
+            }
+        });
+    }
+
+    // Kategori filtreleri
+    const kategoriCheckboxes = document.querySelectorAll('.filter-options input[type="checkbox"]');
+    kategoriCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.textContent.includes('Tüm')) return;
+            const selectedCategories = Array.from(kategoriCheckboxes)
+                .filter(c => c.checked && !c.parentElement.textContent.includes('Tüm'))
+                .map(c => c.parentElement.textContent.trim());
+            currentKategoriFilter = selectedCategories[0] || '';
+            currentPage = 1;
+            if (currentSearchQuery || currentKategoriFilter || currentDurumFilter) {
+                searchKitaplar(1, false);
+            } else {
+                kitapGetir(1, false);
+            }
+        });
+    });
+
+    // Durum filtreleri
+    const durumRadios = document.querySelectorAll('input[name="status"]');
+    durumRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.parentElement.textContent.includes('Tümü')) {
+                currentDurumFilter = '';
+            } else {
+                const durumTexts = {
+                    'Müsait': 'uygun',
+                    'Ödünç Verilmiş': 'odunc'
+                };
+                const text = this.parentElement.textContent.trim();
+                currentDurumFilter = durumTexts[text] || '';
+            }
+            currentPage = 1;
+            if (currentSearchQuery || currentKategoriFilter || currentDurumFilter) {
+                searchKitaplar(1, false);
+            } else {
+                kitapGetir(1, false);
+            }
+        });
+    });
+}
+
+function searchKitaplar(page = 1, append = false) {
+    if (isLoading) return;
+    
+    isLoading = true;
+    const params = new URLSearchParams();
+    params.append('page', page);
+    params.append('pageSize', pageSize);
+    
+    if (currentSearchQuery) params.append('q', currentSearchQuery);
+    if (currentKategoriFilter) params.append('kategori', currentKategoriFilter);
+    if (currentDurumFilter) params.append('durum', currentDurumFilter);
+
+    const apiurl = `http://localhost:5165/api/kitaplar/public/search?${params.toString()}`;
+
+    const token = localStorage.getItem('kutuphane_token');
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+    fetch(apiurl, { headers })
+        .then(response => {
+            console.log('API Response status:', response.status);
+            if (response.status === 401) {
+                console.error('401 Unauthorized - Token geçersiz veya yok');
+                showToast('Oturum süreniz doldu. Lütfen yeniden giriş yapın.', 'error');
+                window.location.href = '../login.html';
+                return null;
+            }
+            if (response.status === 403) {
+                console.error('403 Forbidden - Yetki yok');
+                console.log('Token:', localStorage.getItem('kutuphane_token'));
+                console.log('Rol:', localStorage.getItem('kutuphane_rol'));
+                showToast('Bu alan için yetkiniz yok.', 'error');
+                return null;
+            }
+            if (!response.ok) throw new Error('Sunucu hatası: ' + response.status);
+            return response.json();
+        })
+        .then(payload => {
+            if (!payload) {
+                isLoading = false;
+                return;
+            }
+            
+            const data = payload.data ?? [];
+            hasMore = payload.hasMore ?? false;
+            const tblgovde = document.getElementById('ukitaplarGovde');
+            
+            // İlk yüklemede temizle, sonraki yüklemelerde ekle
+            if (!append) {
+                tblgovde.innerHTML = "";
+                currentPage = 1;
+            }
+
+            if (data.length === 0 && !append) {
+                tblgovde.innerHTML = '<p style="text-align: center; padding: 20px;">Aranan kitap bulunamadı.</p>';
+                isLoading = false;
+                return;
+            }
+
+            data.forEach(kitap => {
+                // Normalize property names
+                const id = kitap.id ?? kitap.kitapId;
+                BOOK_MAP[id] = { ...kitap, id };
+                let durumSinifi = 'available';
+                let durumYazisi = 'Mevcut';
+                let rezerveYazisi = 'Ödünç Al';
+
+                if (kitap.durum === 'odunc') {
+                    durumSinifi = 'borrowed';
+                    durumYazisi = 'Ödünçte';
+                    rezerveYazisi = 'Rezerve Et'
+                } else if (kitap.durum === 'bakim') {
+                    durumSinifi = 'overdue';
+                    durumYazisi = 'Bakımda';
+                    rezerveYazisi ='Bakımda';
+                }
+
+                const satir = `
+                    <div class="book-card" data-id="${id}">
+                        <div class="book-image">
+                            <i class="fas fa-book book-placeholder"></i>
+                        </div>
+                        <div class="book-info">
+                            <h4 class="book-title">${kitap.kitapAdi}</h4>
+                            <p class="book-author">${kitap.yazar}</p>
+                            <p class="book-category">${kitap.kategori}</p>
+                            <span class="book-status ${durumSinifi}">${durumYazisi}</span>
+                        </div>
+                        <div class="book-actions">
+                            <button class="btn-reserve" data-id="${id}">${rezerveYazisi}</button>
+                            <button class="btn-details" data-id="${id}">Detaylar</button>
+                        </div>
+                    </div>
+                `; 
+
+                tblgovde.innerHTML += satir;
+            });
+
+            // Event delegation sadece ilk yüklemede ekle (zaten var olan event listener'lar çalışır)
+            if (!append) {
+                // Event delegation for buttons to open modal
+                tblgovde.addEventListener('click', function(e) {
+                    const btn = e.target.closest('button');
+                    if (!btn) return;
+                    const id = btn.getAttribute('data-id') || btn.closest('.book-card')?.getAttribute('data-id');
+                    if (!id) return;
+                    const kitap = BOOK_MAP[id];
+                    if (!kitap) return;
+                    openKitapModal(kitap);
+                });
+            }
+            
+            isLoading = false;
+        })
+        .catch(error => {
+            console.error('Hata olustu:', error);
+            showToast('Backend ile bağlantı olmadı', 'error');
+            isLoading = false;
+        });
 }
 
 function kitapGetir(page = 1, append = false) {

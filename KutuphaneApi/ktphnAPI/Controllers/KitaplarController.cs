@@ -68,6 +68,69 @@ namespace ktphnAPI.Controllers
                 return StatusCode(500, new { success = false, message = "Veri alınırken hata oluştu.", detail = ex.Message });
             }
         }
+
+        [HttpGet("public/search")]
+        [Authorize]
+        public async Task<IActionResult> SearchKitaplar(
+            [FromQuery] string? q,           // Arama metni
+            [FromQuery] string? kategori,      // Kategori filtresi
+            [FromQuery] string? durum,         // Durum filtresi
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                if (page < 1) page = 1;
+                if (pageSize < 1) pageSize = 20;
+                if (pageSize > 100) pageSize = 100;
+
+                var query = _context.Kitaplar.AsQueryable();
+
+                // Arama metni filtreleme
+                if (!string.IsNullOrWhiteSpace(q))
+                {
+                    query = query.Where(k => 
+                        k.KitapAdi.Contains(q) || 
+                        k.Yazar.Contains(q) || 
+                        k.Isbn.Contains(q));
+                }
+
+                // Kategori filtreleme
+                if (!string.IsNullOrWhiteSpace(kategori))
+                {
+                    query = query.Where(k => k.Kategori == kategori);
+                }
+
+                // Durum filtreleme
+                if (!string.IsNullOrWhiteSpace(durum))
+                {
+                    query = query.Where(k => k.Durum == durum);
+                }
+
+                var total = await query.CountAsync();
+
+                var kitaplar = await query
+                    .OrderBy(k => k.Id)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var hasMore = page * pageSize < total;
+
+                return Ok(new { 
+                    success = true, 
+                    total, 
+                    page, 
+                    pageSize, 
+                    hasMore,
+                    data = kitaplar 
+                });
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Arama yapılırken hata oluştu.", detail = ex.Message });
+            }
+        }
         
         [HttpGet("{id}")]
         [Authorize(Roles = "admin")]
