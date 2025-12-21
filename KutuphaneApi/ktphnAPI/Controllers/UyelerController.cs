@@ -50,5 +50,71 @@ namespace ktphnAPI.Controllers
 
             return Ok(sonuc);
         }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetUye(int id)
+        {
+            try
+            {
+                var uye = await _context.Uyeler.FindAsync(id);
+                if (uye == null)
+                    return NotFound(new { success = false, message = "Üye bulunamadı." });
+
+                return Ok(new { success = true, data = uye });
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "İstek işlenirken hata oluştu.", detail = ex.Message });
+            }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutUye(int id, [FromBody] Uye uye)
+        {
+            if (uye == null || id != uye.Id)
+                return BadRequest(new { success = false, message = "Geçersiz üye verisi." });
+
+            try
+            {
+                var existingUye = await _context.Uyeler.FindAsync(id);
+                if (existingUye == null)
+                    return NotFound(new { success = false, message = "Üye bulunamadı." });
+
+                existingUye.AdSoyad = uye.AdSoyad;
+                existingUye.Email = uye.Email;
+                existingUye.Telefon = uye.Telefon;
+                existingUye.OgrenciNo = uye.OgrenciNo;
+                existingUye.Durum = uye.Durum;
+
+                _context.Uyeler.Update(existingUye);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Üye güncellendi.", data = existingUye });
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Üye güncellenirken hata oluştu.", detail = ex.Message });
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteUye(int id)
+        {
+            try
+            {
+                var uye = await _context.Uyeler.FindAsync(id);
+                if (uye == null)
+                    return NotFound(new { success = false, message = "Üye bulunamadı." });
+
+                _context.Uyeler.Remove(uye);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Üye silindi." });
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Üye silinirken hata oluştu.", detail = ex.Message });
+            }
+        }
     }
 }

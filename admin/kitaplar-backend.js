@@ -1,9 +1,25 @@
+// Pagination settings
+let kitaplarPaginationPage = 1;
+const KITAPLAR_PAGE_SIZE = 30;
+let allKitaplarData = [];
+let isLoadingMore = false;
+
 document.addEventListener('DOMContentLoaded', function () {
     loadKitapStats();
     kitapGetir();
     loadKategoriler();
     setupSearchHandlers();
+    setupWindowScroll();
 });
+
+function setupWindowScroll() {
+    window.addEventListener('scroll', function() {
+        // Check if scrolled to bottom (within 500px from bottom)
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
+            loadMoreKitaplar();
+        }
+    });
+}
 
 async function loadKitapStats() {
     try {
@@ -262,6 +278,10 @@ async function kitapGetir() {
     if (!tblgovde) return console.warn('Tablo govdesi bulunamadi: kitapTabloGovdesi');
 
     tblgovde.innerHTML = '<tr><td colspan="6">Yüklèniyor...</td></tr>';
+    
+    // Reset pagination
+    kitaplarPaginationPage = 1;
+    allKitaplarData = [];
 
     try {
         const token = localStorage.getItem('kutuphane_token');
@@ -285,40 +305,71 @@ async function kitapGetir() {
             return;
         }
 
-        const rows = [];
-        data.forEach(kitap => {
-            let durumSinifi = 'status available';
-            let durumYazisi = 'Mevcut';
-
-            if (kitap.durum === 'odunc') {
-                durumSinifi = 'status borrowed';
-                durumYazisi = 'Ödünçte';
-            } else if (kitap.durum === 'bakim') {
-                durumSinifi = 'status overdue';
-                durumYazisi = 'Bakımda';
-            }
-
-            rows.push(`
-                <tr>
-                    <td>${escapeHtml(kitap.id)}</td>
-                    <td>${escapeHtml(kitap.kitapAdi)}</td>
-                    <td>${escapeHtml(kitap.yazar)}</td>
-                    <td>${escapeHtml(kitap.kategori || '-')}</td>
-                    <td><span class="${durumSinifi}">${escapeHtml(durumYazisi)}</span></td>
-                    <td>
-                        <button class="btn-edit" onclick="kitapDuzenle(${escapeHtml(kitap.id)})">Düzenle</button>
-                        <button class="btn-delete" onclick="kitapSil(${escapeHtml(kitap.id)})">Sil</button>
-                    </td>
-                </tr>
-            `);
-        });
-
-        tblgovde.innerHTML = rows.join('');//innerHTML+= e gore daha iyi    
+        // Store all data for pagination
+        allKitaplarData = data;
+        
+        // Display first page
+        displayKitaplarPage(0);
 
     } catch (error) {
         console.error('Hata olustu:', error);
         tblgovde.innerHTML = '<tr><td colspan="6">Backend ile bağlantı kurulamadı.</td></tr>';
     }
+}
+
+function displayKitaplarPage(startIndex) {
+    const tblgovde = document.getElementById('kitapTabloGovdesi');
+    const endIndex = startIndex + KITAPLAR_PAGE_SIZE;
+    const pageData = allKitaplarData.slice(startIndex, endIndex);
+    
+    const rows = [];
+    pageData.forEach(kitap => {
+        let durumSinifi = 'status available';
+        let durumYazisi = 'Mevcut';
+
+        if (kitap.durum === 'odunc') {
+            durumSinifi = 'status borrowed';
+            durumYazisi = 'Ödünçte';
+        } else if (kitap.durum === 'bakim') {
+            durumSinifi = 'status overdue';
+            durumYazisi = 'Bakımda';
+        }
+
+        rows.push(`
+            <tr>
+                <td>${escapeHtml(kitap.id)}</td>
+                <td>${escapeHtml(kitap.kitapAdi)}</td>
+                <td>${escapeHtml(kitap.yazar)}</td>
+                <td>${escapeHtml(kitap.kategori || '-')}</td>
+                <td><span class="${durumSinifi}">${escapeHtml(durumYazisi)}</span></td>
+                <td>
+                    <button class="btn-edit" onclick="showKitapDetail(${JSON.stringify(kitap)})">Detay</button>
+                    <button class="btn-delete" onclick="showDeleteConfirm(${kitap.id}, '${escapeHtml(kitap.kitapAdi)}', 'kitap'); this.closest('.detail-modal')?.remove();">Sil</button>
+                </td>
+            </tr>
+        `);
+    });
+
+    if (startIndex === 0) {
+        tblgovde.innerHTML = rows.join('');
+    } else {
+        tblgovde.innerHTML += rows.join('');
+    }
+}
+
+function loadMoreKitaplar() {
+    if (isLoadingMore) return;
+    
+    const nextIndex = kitaplarPaginationPage * KITAPLAR_PAGE_SIZE;
+    if (nextIndex >= allKitaplarData.length) return;
+    
+    isLoadingMore = true;
+    kitaplarPaginationPage++;
+    
+    setTimeout(() => {
+        displayKitaplarPage(nextIndex);
+        isLoadingMore = false;
+    }, 200);
 }
 function kitapSil(id) {
     if (confirm(id + ' ID\'li kitabı silmek istiyor musunuz?')) {
@@ -342,7 +393,7 @@ function showKitapDetail(kitap) {
     modal.innerHTML = `
         <div class="detail-modal-content">
             <button class="detail-modal-close" onclick="this.closest('.detail-modal').remove()">✕</button>
-            <h2>${kitap.kitapAdi}</h2>
+            <h2>${escapeHtml(kitap.kitapAdi)}</h2>
             <div class="detail-grid">
                 <div class="detail-row">
                     <span class="detail-label">ID:</span>
@@ -350,15 +401,15 @@ function showKitapDetail(kitap) {
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Yazar:</span>
-                    <span class="detail-value">${kitap.yazar}</span>
+                    <span class="detail-value">${escapeHtml(kitap.yazar)}</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Kategori:</span>
-                    <span class="detail-value">${kitap.kategori || '-'}</span>
+                    <span class="detail-value">${escapeHtml(kitap.kategori || '-')}</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">ISBN:</span>
-                    <span class="detail-value">${kitap.isbn || '-'}</span>
+                    <span class="detail-value">${escapeHtml(kitap.isbn || '-')}</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Durum:</span>
@@ -366,12 +417,133 @@ function showKitapDetail(kitap) {
                 </div>
             </div>
             <div class="detail-modal-actions">
-                <button class="btn-edit" onclick="kitapDuzenle(${kitap.id}); this.closest('.detail-modal').remove();">Düzenle</button>
-                <button class="btn-delete" onclick="kitapSil(${kitap.id}); this.closest('.detail-modal').remove();">Sil</button>
+                <button class="btn-edit" onclick="showKitapEditModal(${kitap.id})">Düzenle</button>
+                <button class="btn-delete" onclick="showDeleteConfirm(${kitap.id}, '${escapeHtml(kitap.kitapAdi)}', 'kitap'); this.closest('.detail-modal').remove();">Sil</button>
+                <button class="btn-secondary" onclick="this.closest('.detail-modal').remove();">Kapat</button>
             </div>
         </div>
     `;
     document.body.appendChild(modal);
+}
+
+function showKitapEditModal(kitapId) {
+    const kitap = allKitaplarData.find(k => k.id === kitapId);
+    if (!kitap) {
+        showToast('Kitap bulunamadı', 'error');
+        return;
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'detail-modal';
+    modal.innerHTML = `
+        <div class="detail-modal-content" style="max-width: 500px;">
+            <button class="detail-modal-close" onclick="this.closest('.detail-modal').remove()">✕</button>
+            <h2>Kitap Düzenle</h2>
+            <div style="margin: 20px 0;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Kitap Adı:</label>
+                    <input type="text" id="editKitapAdi" value="${escapeHtml(kitap.kitapAdi)}" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Yazar:</label>
+                    <input type="text" id="editYazar" value="${escapeHtml(kitap.yazar)}" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Kategori:</label>
+                    <input type="text" id="editKategori" value="${escapeHtml(kitap.kategori || '')}" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">ISBN:</label>
+                    <input type="text" id="editIsbn" value="${escapeHtml(kitap.isbn || '')}" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Durum:</label>
+                    <select id="editDurum" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <option value="mevcut" ${kitap.durum === 'mevcut' ? 'selected' : ''}>Mevcut</option>
+                        <option value="odunc" ${kitap.durum === 'odunc' ? 'selected' : ''}>Ödünçte</option>
+                        <option value="bakim" ${kitap.durum === 'bakim' ? 'selected' : ''}>Bakımda</option>
+                    </select>
+                </div>
+            </div>
+            <div class="detail-modal-actions">
+                <button class="btn-edit" onclick="saveKitapChanges(${kitapId})">Kaydet</button>
+                <button class="btn-secondary" onclick="this.closest('.detail-modal').remove();">İptal</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+async function saveKitapChanges(kitapId) {
+    const kitapAdi = document.getElementById('editKitapAdi').value.trim();
+    const yazar = document.getElementById('editYazar').value.trim();
+    const kategori = document.getElementById('editKategori').value.trim();
+    const isbn = document.getElementById('editIsbn').value.trim();
+    const durum = document.getElementById('editDurum').value;
+
+    if (!kitapAdi || !yazar) {
+        showToast('Kitap adı ve yazar boş olamaz', 'error');
+        return;
+    }
+
+    try {
+        const token = localStorage.getItem('kutuphane_token');
+        if (!token) {
+            showToast('Oturum sonlandırıldı', 'error');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        const res = await fetch(`http://localhost:5165/api/kitaplar/${kitapId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: kitapId,
+                kitapAdi,
+                yazar,
+                kategori,
+                isbn,
+                durum
+            })
+        });
+
+        if (res.status === 401) {
+            showToast('Oturum süreniz doldu', 'error');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        if (res.status === 403) {
+            showToast('Bu işlem için admin yetkisi gerekir', 'error');
+            return;
+        }
+
+        if (!res.ok) {
+            showToast('Kitap güncellenirken hata oluştu', 'error');
+            return;
+        }
+
+        showToast('Kitap başarıyla güncellendi', 'success');
+        document.querySelectorAll('.detail-modal').forEach(m => m.remove());
+        setTimeout(() => {
+            kitapGetir();
+            loadKitapStats();
+        }, 500);
+    } catch (error) {
+        console.error('Hata:', error);
+        showToast('Kitap güncellenirken hata oluştu', 'error');
+    }
+}
+
+function kitapDuzenle(id) {
+    showToast('Kitap düzenleme sayfası', 'info');
+}
+
+function kitapSil(id) {
+    showToast('Kitap silme sayfası', 'info');
 }
 // Üye detay popup'ını göster
 function showUyeDetail(uye) {

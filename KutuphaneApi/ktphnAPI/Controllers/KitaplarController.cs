@@ -168,5 +168,56 @@ namespace ktphnAPI.Controllers
                 return StatusCode(500, new { success = false, message = "Kitap kaydedilemedi.", detail = ex.Message });
             }
         }
+
+        [HttpPut("{id}")]
+        [Authorize(Roles = "admin")]
+        public async Task<IActionResult> PutKitap(int id, [FromBody] Kitap kitap)
+        {
+            if (kitap == null || id != kitap.Id)
+                return BadRequest(new { success = false, message = "Geçersiz kitap verisi." });
+
+            try
+            {
+                var existingKitap = await _context.Kitaplar.FindAsync(id);
+                if (existingKitap == null)
+                    return NotFound(new { success = false, message = "Kitap bulunamadı." });
+
+                existingKitap.KitapAdi = kitap.KitapAdi;
+                existingKitap.Yazar = kitap.Yazar;
+                existingKitap.Kategori = kitap.Kategori;
+                existingKitap.Isbn = kitap.Isbn;
+                existingKitap.Durum = kitap.Durum;
+
+                _context.Kitaplar.Update(existingKitap);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Kitap güncellendi.", data = existingKitap });
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Kitap güncellenirken hata oluştu.", detail = ex.Message });
+            }
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "admin")]
+        public async Task<IActionResult> DeleteKitap(int id)
+        {
+            try
+            {
+                var kitap = await _context.Kitaplar.FindAsync(id);
+                if (kitap == null)
+                    return NotFound(new { success = false, message = "Kitap bulunamadı." });
+
+                _context.Kitaplar.Remove(kitap);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Kitap silindi." });
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Kitap silinirken hata oluştu.", detail = ex.Message });
+            }
+        }
     }
 } 

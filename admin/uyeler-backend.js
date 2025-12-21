@@ -1,6 +1,14 @@
+// Pagination settings
+let uyelerPaginationPage = 1;
+const UYELER_PAGE_SIZE = 30;
+let allUyelerData = [];
+let isLoadingMore = false;
+
 document.addEventListener('DOMContentLoaded', function () {
     loadUyeStats();
     uyeleriGetir();
+    setupSearchHandlers();
+    setupWindowScroll();
 });
 
 async function loadUyeStats() {
@@ -28,11 +36,57 @@ async function loadUyeStats() {
     }
 }
 
+function setupWindowScroll() {
+    window.addEventListener('scroll', function() {
+        // Check if scrolled to bottom (within 500px from bottom)
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
+            loadMoreUyeler();
+        }
+    });
+}
+
+function setupInfiniteScroll() {
+    // Not needed anymore - using window scroll instead
+}
+
+function setupSearchHandlers() {
+    // Tablo bölümündeki arama
+    const tableSearchInput = document.querySelector('.search-table');
+    if (tableSearchInput) {
+        tableSearchInput.addEventListener('keyup', function() {
+            applyFilters();
+        });
+    }
+
+    // Durum filtresi
+    const durumFiltresi = document.getElementById('durumFiltresi');
+    if (durumFiltresi) {
+        durumFiltresi.addEventListener('change', function() {
+            applyFilters();
+        });
+    }
+}
+
+function applyFilters() {
+    const query = document.querySelector('.search-table')?.value?.trim() || '';
+    const durum = document.getElementById('durumFiltresi')?.value || '';
+    
+    if (!query && !durum) {
+        uyeleriGetir();
+    } else {
+        uyeleriAraAdvanced(query, durum);
+    }
+}
+
 async function uyeleriGetir() {
     const apiurl = 'http://localhost:5165/api/uyeler';
     const tblgovde = document.getElementById('uyelerTableGovde');
     if (!tblgovde) return;
     tblgovde.innerHTML = '<tr><td colspan="9">Yükleniyor...</td></tr>';
+
+    // Reset pagination
+    uyelerPaginationPage = 1;
+    allUyelerData = [];
 
     try {
         const token = localStorage.getItem('kutuphane_token');
@@ -53,49 +107,81 @@ async function uyeleriGetir() {
         const payload = await res.json();
         const data = Array.isArray(payload) ? payload : (payload.data ?? payload ?? []);
 
-        tblgovde.innerHTML = "";
-        data.forEach(uye => {
+        // Store all data for pagination
+        allUyelerData = data;
+        
+        // Display first page
+        displayUyelerPage(0);
 
-                let durumSinifi = 'status active';
-                let durumYazisi = 'Aktif';
-                let rolHTML = rolRozetiOlustur(uye.rolIsimleri);
-                
-                if (uye.durum == 'pasif') {
-                    durumSinifi = 'status overdue';
-                    durumYazisi = 'Pasif';
-                }
-
-                if (uye.durum == 'askida') {
-                    durumSinifi = 'status suspended';
-                    durumYazisi = 'Askıda';
-                }
-
-                let kayitTarihi = uye.kayitTarihi ? new Date(uye.kayitTarihi).toLocaleDateString('tr-TR') : '-';
-
-                let ogrenciNo = uye.ogrenciNo || '-';
-
-                const satir = `
-                    <tr>
-                        <td>${uye.id}</td>
-                        <td>${uye.adSoyad}</td>
-                        <td>${uye.email}</td>
-                        <td>${uye.telefon || '-'}</td>
-                        <td>${rolHTML}</td> <td>${ogrenciNo}</td>
-                        <td>${kayitTarihi}</td>
-                        <td><span class="${durumSinifi}">${durumYazisi}</span></td>
-                        <td>
-                            <button class="btn-edit" onclick="uyeDuzenle(${uye.id})">Düzenle</button>
-                            <button class="btn-delete" onclick="uyeSil(${uye.id})">Sil</button>
-                        </td>
-                    </tr>
-                `;
-
-            tblgovde.innerHTML += satir;
-        });
     } catch (error) {
         console.error('Hata olustu:', error);
         tblgovde.innerHTML = '<tr><td colspan="9">Backend ile bağlantı kurulamadı.</td></tr>';
     }
+}
+
+function displayUyelerPage(startIndex) {
+    const tblgovde = document.getElementById('uyelerTableGovde');
+    const endIndex = startIndex + UYELER_PAGE_SIZE;
+    const pageData = allUyelerData.slice(startIndex, endIndex);
+    
+    const rows = [];
+    pageData.forEach(uye => {
+        let durumSinifi = 'status active';
+        let durumYazisi = 'Aktif';
+        let rolHTML = rolRozetiOlustur(uye.rolIsimleri);
+        
+        if (uye.durum == 'pasif') {
+            durumSinifi = 'status overdue';
+            durumYazisi = 'Pasif';
+        }
+
+        if (uye.durum == 'askida') {
+            durumSinifi = 'status suspended';
+            durumYazisi = 'Askıda';
+        }
+
+        let kayitTarihi = uye.kayitTarihi ? new Date(uye.kayitTarihi).toLocaleDateString('tr-TR') : '-';
+        let ogrenciNo = uye.ogrenciNo || '-';
+
+        const satir = `
+            <tr>
+                <td>${uye.id}</td>
+                <td>${uye.adSoyad}</td>
+                <td>${uye.email}</td>
+                <td>${uye.telefon || '-'}</td>
+                <td>${rolHTML}</td> <td>${ogrenciNo}</td>
+                <td>${kayitTarihi}</td>
+                <td><span class="${durumSinifi}">${durumYazisi}</span></td>
+                <td>
+                    <button class="btn-edit" onclick="showUyeDetail(${JSON.stringify(uye)})">Detay</button>
+                    <button class="btn-delete" onclick="showDeleteConfirm(${uye.id}, '${uye.adSoyad}', 'uye')">Sil</button>
+                </td>
+            </tr>
+        `;
+
+        rows.push(satir);
+    });
+
+    if (startIndex === 0) {
+        tblgovde.innerHTML = rows.join('');
+    } else {
+        tblgovde.innerHTML += rows.join('');
+    }
+}
+
+function loadMoreUyeler() {
+    if (isLoadingMore) return;
+    
+    const nextIndex = uyelerPaginationPage * UYELER_PAGE_SIZE;
+    if (nextIndex >= allUyelerData.length) return;
+    
+    isLoadingMore = true;
+    uyelerPaginationPage++;
+    
+    setTimeout(() => {
+        displayUyelerPage(nextIndex);
+        isLoadingMore = false;
+    }, 200);
 }
 
 
@@ -195,11 +281,110 @@ async function uyeleriAra(query) {
     }
 }
 
+async function uyeleriAraAdvanced(query, durum) {
+    const tblgovde = document.getElementById('uyelerTableGovde');
+    if (!tblgovde) return;
+    tblgovde.innerHTML = '<tr><td colspan="9">Filtreleniyor...</td></tr>';
+
+    try {
+        const token = localStorage.getItem('kutuphane_token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const apiurl = 'http://localhost:5165/api/uyeler';
+        const res = await fetch(apiurl, { headers });
+
+        if (res.status === 401) {
+            tblgovde.innerHTML = '<tr><td colspan="9">Oturum süreniz doldu. Lütfen yeniden giriş yapın.</td></tr>';
+            setTimeout(() => window.location.href = 'login.html', 800);
+            return;
+        }
+        if (res.status === 403) {
+            tblgovde.innerHTML = '<tr><td colspan="9">Bu alan için admin yetkisi gerekir.</td></tr>';
+            return;
+        }
+        if (!res.ok) throw new Error('Sunucu hatası: ' + res.status);
+
+        const payload = await res.json();
+        let data = Array.isArray(payload) ? payload : (payload.data ?? payload ?? []);
+
+        // Filtreleme
+        if (query) {
+            const lowerQuery = query.toLowerCase();
+            data = data.filter(uye => 
+                uye.adSoyad?.toLowerCase().includes(lowerQuery) ||
+                uye.email?.toLowerCase().includes(lowerQuery) ||
+                uye.telefon?.toLowerCase().includes(lowerQuery) ||
+                uye.ogrenciNo?.toLowerCase().includes(lowerQuery) ||
+                uye.id?.toString().includes(query)
+            );
+        }
+        
+        if (durum) {
+            data = data.filter(uye => uye.durum === durum);
+        }
+
+        tblgovde.innerHTML = "";
+        if (data.length === 0) {
+            tblgovde.innerHTML = '<tr><td colspan="9">Arama koşullarına uygun üye bulunamadı.</td></tr>';
+            return;
+        }
+
+        data.forEach(uye => {
+            let durumSinifi = 'status active';
+            let durumYazisi = 'Aktif';
+            let rolHTML = rolRozetiOlustur(uye.rolIsimleri);
+            
+            if (uye.durum == 'pasif') {
+                durumSinifi = 'status overdue';
+                durumYazisi = 'Pasif';
+            }
+
+            if (uye.durum == 'askida') {
+                durumSinifi = 'status suspended';
+                durumYazisi = 'Askıda';
+            }
+
+            let kayitTarihi = uye.kayitTarihi ? new Date(uye.kayitTarihi).toLocaleDateString('tr-TR') : '-';
+            let ogrenciNo = uye.ogrenciNo || '-';
+
+            const satir = `
+                <tr>
+                    <td>${uye.id}</td>
+                    <td>${uye.adSoyad}</td>
+                    <td>${uye.email}</td>
+                    <td>${uye.telefon || '-'}</td>
+                    <td>${rolHTML}</td> <td>${ogrenciNo}</td>
+                    <td>${kayitTarihi}</td>
+                    <td><span class="${durumSinifi}">${durumYazisi}</span></td>
+                    <td>
+                        <button class="btn-edit" onclick="showUyeDetail({id: ${uye.id}, adSoyad: '${uye.adSoyad}', email: '${uye.email}', telefon: '${uye.telefon || '-'}', ogrenciNo: '${uye.ogrenciNo || '-'}', durum: '${uye.durum}', kayitTarihi: '${kayitTarihi}', rolIsimleri: ${JSON.stringify(uye.rolIsimleri || [])}})">Detay</button>
+                        <button class="btn-delete" onclick="showDeleteConfirm(${uye.id}, '${uye.adSoyad}')">Sil</button>
+                    </td>
+                </tr>
+            `;
+
+            tblgovde.innerHTML += satir;
+        });
+    } catch (error) {
+        console.error('Hata olustu:', error);
+        tblgovde.innerHTML = '<tr><td colspan="9">Filtreleme yapılırken hata oluştu.</td></tr>';
+    }
+}
+
 function uyeDuzenle(id) {
     console.log("Düzenlenecek ID:", id);
 }
 
 // Üye detay popup'ını göster
+function escapeHtmlUye(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 function showUyeDetail(uye) {
     let durumYazisi = 'Aktif';
     if (uye.durum === 'pasif') durumYazisi = 'Pasif';
@@ -213,7 +398,7 @@ function showUyeDetail(uye) {
     modal.innerHTML = `
         <div class="detail-modal-content">
             <button class="detail-modal-close" onclick="this.closest('.detail-modal').remove()">✕</button>
-            <h2>${uye.adSoyad}</h2>
+            <h2>${escapeHtmlUye(uye.adSoyad)}</h2>
             <div class="detail-grid">
                 <div class="detail-row">
                     <span class="detail-label">ID:</span>
@@ -221,15 +406,15 @@ function showUyeDetail(uye) {
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Email:</span>
-                    <span class="detail-value">${uye.email}</span>
+                    <span class="detail-value">${escapeHtmlUye(uye.email)}</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Telefon:</span>
-                    <span class="detail-value">${uye.telefon || '-'}</span>
+                    <span class="detail-value">${escapeHtmlUye(uye.telefon || '-')}</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Öğrenci No:</span>
-                    <span class="detail-value">${uye.ogrenciNo || '-'}</span>
+                    <span class="detail-value">${escapeHtmlUye(uye.ogrenciNo || '-')}</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Rol:</span>
@@ -245,12 +430,125 @@ function showUyeDetail(uye) {
                 </div>
             </div>
             <div class="detail-modal-actions">
-                <button class="btn-edit" onclick="uyeDuzenle(${uye.id}); this.closest('.detail-modal').remove();">Düzenle</button>
-                <button class="btn-delete" onclick="uyeSil(${uye.id}); this.closest('.detail-modal').remove();">Sil</button>
+                <button class="btn-edit" onclick="showUyeEditModal(${uye.id})">Düzenle</button>
+                <button class="btn-delete" onclick="showDeleteConfirm(${uye.id}, '${escapeHtmlUye(uye.adSoyad)}', 'uye'); this.closest('.detail-modal').remove();">Sil</button>
+                <button class="btn-secondary" onclick="this.closest('.detail-modal').remove();">Kapat</button>
             </div>
         </div>
     `;
     document.body.appendChild(modal);
+}
+
+function showUyeEditModal(uyeId) {
+    const uye = allUyelerData.find(u => u.id === uyeId);
+    if (!uye) {
+        showToast('Üye bulunamadı', 'error');
+        return;
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'detail-modal';
+    modal.innerHTML = `
+        <div class="detail-modal-content" style="max-width: 500px;">
+            <button class="detail-modal-close" onclick="this.closest('.detail-modal').remove()">✕</button>
+            <h2>Üye Düzenle</h2>
+            <div style="margin: 20px 0;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Ad Soyad:</label>
+                    <input type="text" id="editAdSoyad" value="${escapeHtmlUye(uye.adSoyad)}" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Email:</label>
+                    <input type="email" id="editEmail" value="${escapeHtmlUye(uye.email)}" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Telefon:</label>
+                    <input type="text" id="editTelefon" value="${escapeHtmlUye(uye.telefon || '')}" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Öğrenci No:</label>
+                    <input type="text" id="editOgrenciNo" value="${escapeHtmlUye(uye.ogrenciNo || '')}" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Durum:</label>
+                    <select id="editDurum" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                        <option value="aktif" ${uye.durum === 'aktif' || !uye.durum ? 'selected' : ''}>Aktif</option>
+                        <option value="pasif" ${uye.durum === 'pasif' ? 'selected' : ''}>Pasif</option>
+                        <option value="askida" ${uye.durum === 'askida' ? 'selected' : ''}>Askıda</option>
+                    </select>
+                </div>
+            </div>
+            <div class="detail-modal-actions">
+                <button class="btn-edit" onclick="saveUyeChanges(${uyeId})">Kaydet</button>
+                <button class="btn-secondary" onclick="this.closest('.detail-modal').remove();">İptal</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+async function saveUyeChanges(uyeId) {
+    const adSoyad = document.getElementById('editAdSoyad').value.trim();
+    const email = document.getElementById('editEmail').value.trim();
+    const telefon = document.getElementById('editTelefon').value.trim();
+    const ogrenciNo = document.getElementById('editOgrenciNo').value.trim();
+    const durum = document.getElementById('editDurum').value;
+
+    if (!adSoyad || !email) {
+        showToast('Ad soyad ve email boş olamaz', 'error');
+        return;
+    }
+
+    try {
+        const token = localStorage.getItem('kutuphane_token');
+        if (!token) {
+            showToast('Oturum sonlandırıldı', 'error');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        const res = await fetch(`http://localhost:5165/api/uyeler/${uyeId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: uyeId,
+                adSoyad,
+                email,
+                telefon,
+                ogrenciNo,
+                durum
+            })
+        });
+
+        if (res.status === 401) {
+            showToast('Oturum süreniz doldu', 'error');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        if (res.status === 403) {
+            showToast('Bu işlem için admin yetkisi gerekir', 'error');
+            return;
+        }
+
+        if (!res.ok) {
+            showToast('Üye güncellenirken hata oluştu', 'error');
+            return;
+        }
+
+        showToast('Üye başarıyla güncellendi', 'success');
+        document.querySelectorAll('.detail-modal').forEach(m => m.remove());
+        setTimeout(() => {
+            uyeleriGetir();
+            loadUyeStats();
+        }, 500);
+    } catch (error) {
+        console.error('Hata:', error);
+        showToast('Üye güncellenirken hata oluştu', 'error');
+    }
 }
 
 // Kitap detay popup'ını göster

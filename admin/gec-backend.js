@@ -16,8 +16,8 @@ async function loadCezaStats() {
         
         const toplamCeza = cezalar.length;
         const toplamTutar = cezalar.reduce((sum, c) => sum + (c.cezaTutari || 0), 0);
-        const odenmis = cezalar.filter(c => c.durum === 'odenmis').length;
-        const odenmedis = cezalar.filter(c => c.durum === 'odenmedis' || c.durum !== 'odenmis').length;
+        const odenmedis = cezalar.filter(c => c.durum === 'aktif').length;
+        const odenmis = cezalar.filter(c => c.durum === 'odemendi' || c.durum === 'afedildi').length;
         
         const stats = document.querySelectorAll('.stat-card');
         if (stats[0]) stats[0].querySelector('.stat-number').textContent = toplamCeza;
@@ -71,11 +71,14 @@ async function cezaGetir() {
         const rows = [];
         data.forEach(ceza => {
             let durumSinifi = 'status pending';
-            let durumYazisi = 'Ödenmemiş';
+            let durumYazisi = 'Aktif (Ödenmemiş)';
 
-            if (ceza.durum === 'odenmis') {
+            if (ceza.durum === 'odemendi') {
                 durumSinifi = 'status available';
                 durumYazisi = 'Ödenmiş';
+            } else if (ceza.durum === 'afedildi') {
+                durumSinifi = 'status available';
+                durumYazisi = 'Affedildi';
             }
 
             const cezaTarihi = ceza.cezaTarihi ? new Date(ceza.cezaTarihi).toLocaleDateString('tr-TR') : '-';
@@ -180,11 +183,14 @@ async function searchCeza(query) {
         const rows = [];
         data.forEach(ceza => {
             let durumSinifi = 'status pending';
-            let durumYazisi = 'Ödenmemiş';
+            let durumYazisi = 'Aktif (Ödenmemiş)';
 
-            if (ceza.durum === 'odenmis') {
+            if (ceza.durum === 'odemendi') {
                 durumSinifi = 'status available';
                 durumYazisi = 'Ödenmiş';
+            } else if (ceza.durum === 'afedildi') {
+                durumSinifi = 'status available';
+                durumYazisi = 'Affedildi';
             }
 
             const cezaTarihi = ceza.cezaTarihi ? new Date(ceza.cezaTarihi).toLocaleDateString('tr-TR') : '-';
@@ -258,11 +264,14 @@ async function searchCezaAdvanced(query, durum) {
         const rows = [];
         data.forEach(ceza => {
             let durumSinifi = 'status pending';
-            let durumYazisi = 'Ödenmemiş';
+            let durumYazisi = 'Aktif (Ödenmemiş)';
 
-            if (ceza.durum === 'odenmis') {
+            if (ceza.durum === 'odemendi') {
                 durumSinifi = 'status available';
                 durumYazisi = 'Ödenmiş';
+            } else if (ceza.durum === 'afedildi') {
+                durumSinifi = 'status available';
+                durumYazisi = 'Affedildi';
             }
 
             const cezaTarihi = ceza.cezaTarihi ? new Date(ceza.cezaTarihi).toLocaleDateString('tr-TR') : '-';
@@ -311,10 +320,10 @@ async function cezaDetay(id) {
         const cezaTarihi = ceza.cezaTarihi ? new Date(ceza.cezaTarihi).toLocaleDateString('tr-TR') : '-';
         const odemeTarihi = ceza.odemeTarihi ? new Date(ceza.odemeTarihi).toLocaleDateString('tr-TR') : '-';
         
-        let durumYazisi = 'Ödenmemiş';
+        let durumYazisi = 'Aktif (Ödenmemiş)';
         let durumSinifi = 'status pending';
         
-        if (ceza.durum === 'odenmis') {
+        if (ceza.durum === 'odemendi') {
             durumYazisi = 'Ödenmiş';
             durumSinifi = 'status available';
         } else if (ceza.durum === 'afedildi') {
@@ -323,7 +332,7 @@ async function cezaDetay(id) {
         }
         
         let affetButonu = '';
-        if (isAdmin && ceza.durum === 'odenmedis') {
+        if (isAdmin && ceza.durum === 'aktif') {
             affetButonu = `<button class="btn-edit" onclick="showAffetModal(${ceza.id})">Cezayı Affet</button>`;
         }
         

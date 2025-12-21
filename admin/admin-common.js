@@ -316,6 +316,90 @@ function escapeHtml(str) {
         .replace(/'/g, '&#039;');
 }
 
+// Silme onayı popup'ı
+function showDeleteConfirm(id, itemName, itemType = 'uye') {
+    const modal = document.createElement('div');
+    modal.className = 'detail-modal';
+    modal.innerHTML = `
+        <div class="detail-modal-content" style="max-width: 400px;">
+            <button class="detail-modal-close" onclick="this.closest('.detail-modal').remove()">✕</button>
+            <h2 style="color: #f44336;">Silme Onayı</h2>
+            <div style="margin: 20px 0; font-size: 16px;">
+                <p><strong>${escapeHtml(itemName)}</strong> ögesini silmek istediğinize emin misiniz?</p>
+                <p style="color: #999; font-size: 14px;">Bu işlem geri alınamaz.</p>
+            </div>
+            <div class="detail-modal-actions">
+                <button class="btn-delete" onclick="confirmDelete(${id}, '${itemType}'); this.closest('.detail-modal').remove();">Evet, Sil</button>
+                <button class="btn-secondary" onclick="this.closest('.detail-modal').remove();">İptal</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+async function confirmDelete(id, itemType = 'uye') {
+    try {
+        const token = localStorage.getItem('kutuphane_token');
+        if (!token) {
+            showToast('Oturum sonlandırıldı', 'error');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        let endpoint = '';
+        if (itemType === 'uye') {
+            endpoint = `http://localhost:5165/api/uyeler/${id}`;
+        } else if (itemType === 'kitap') {
+            endpoint = `http://localhost:5165/api/kitaplar/${id}`;
+        } else {
+            showToast('Bilinmeyen öge türü', 'error');
+            return;
+        }
+
+        const res = await fetch(endpoint, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (res.status === 401) {
+            showToast('Oturum süreniz doldu', 'error');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        if (res.status === 403) {
+            showToast('Bu işlem için admin yetkisi gerekir', 'error');
+            return;
+        }
+
+        if (!res.ok) {
+            showToast('Silme işlemi başarısız oldu', 'error');
+            return;
+        }
+
+        showToast('Öge başarıyla silindi', 'success');
+        
+        // Refresh the appropriate table
+        if (itemType === 'uye') {
+            setTimeout(() => {
+                if (window.uyeleriGetir) window.uyeleriGetir();
+                if (window.loadUyeStats) window.loadUyeStats();
+            }, 500);
+        } else if (itemType === 'kitap') {
+            setTimeout(() => {
+                if (window.kitapGetir) window.kitapGetir();
+                if (window.loadKitapStats) window.loadKitapStats();
+            }, 500);
+        }
+    } catch (error) {
+        console.error('Silme hatası:', error);
+        showToast('Silme işlemi sırasında hata oluştu', 'error');
+    }
+}
+
 // DOM hazır olunca header aramasını ayarla
 document.addEventListener('DOMContentLoaded', function() {
     setupHeaderSearch();

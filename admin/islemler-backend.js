@@ -1,10 +1,23 @@
 let currentPage = 1;
 const pageSize = 20;
 let hasMore = false;
+let allIslemlerData = [];
+let isLoadingMore = false;
 
 document.addEventListener('DOMContentLoaded', function () {
     loadIslemStats();
+    islemGetir();
+    setupWindowScroll();
 });
+
+function setupWindowScroll() {
+    window.addEventListener('scroll', function() {
+        // Check if scrolled to bottom (within 500px from bottom)
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
+            loadMore();
+        }
+    });
+}
 
 async function loadIslemStats() {
     try {
@@ -102,7 +115,6 @@ async function islemGetir(page = 1, append = false) {
             }
             
 
-            // copliot baba bunalri ekeldi ne halta yaradigna bakcaz.. support several possible naming conventions from API
             const userAgent = islem.userAgent ?? islem.user_agent ?? islem.UserAgent ?? '';
             const ip = islem.ip_address ?? islem.ipAddress ?? islem.ip ?? '';
             const alim = islem.alimTarihi ?? islem.alim_tarihi ?? '';
@@ -163,8 +175,92 @@ function islemSil(id) {
     }
 }
 
-function islemDetay(id) {
-    console.log("Detay:", id);
+async function islemDetay(id) {
+    try {
+        const token = localStorage.getItem('kutuphane_token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        
+        // Fetch full details for this transaction
+        const res = await fetch(`http://localhost:5165/api/islemler?page=1&pageSize=1000`, { headers });
+        if (!res.ok) {
+            showToast('İşlem detayları yüklenemedi', 'error');
+            return;
+        }
+
+        const payload = await res.json();
+        const allIslemler = payload.data ?? [];
+        const islem = allIslemler.find(i => i.id === id);
+        
+        if (!islem) {
+            showToast('İşlem bulunamadı', 'error');
+            return;
+        }
+
+        showIslemDetail(islem);
+    } catch (error) {
+        console.error('Hata:', error);
+        showToast('İşlem detayları yüklenirken hata oluştu', 'error');
+    }
+}
+
+function showIslemDetail(islem) {
+    let durumYazisi = 'Ödünçte';
+    if (islem.durum === 'iade') durumYazisi = 'İade';
+    else if (islem.durum === 'rezervasyon') durumYazisi = 'Rezervasyon';
+
+    const alimTarihi = islem.alimTarihi ? new Date(islem.alimTarihi).toLocaleDateString('tr-TR') : '-';
+    const iadeTarihi = islem.iadeTarihi ? new Date(islem.iadeTarihi).toLocaleDateString('tr-TR') : '-';
+
+    const modal = document.createElement('div');
+    modal.className = 'detail-modal';
+    modal.innerHTML = `
+        <div class="detail-modal-content">
+            <button class="detail-modal-close" onclick="this.closest('.detail-modal').remove()">✕</button>
+            <h2>İşlem Detayları</h2>
+            <div class="detail-grid">
+                <div class="detail-row">
+                    <span class="detail-label">İşlem ID:</span>
+                    <span class="detail-value">${islem.id}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Üye:</span>
+                    <span class="detail-value">${escapeHtml(islem.uyeAdSoyad)} <small>(#${islem.uyeId})</small></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Kitap:</span>
+                    <span class="detail-value">${escapeHtml(islem.kitapAdi)} <small>${escapeHtml(islem.yazar)}</small></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">İşlem Türü:</span>
+                    <span class="detail-value">${escapeHtml(islem.islemTuru)}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Durum:</span>
+                    <span class="detail-value">${durumYazisi}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Alım Tarihi:</span>
+                    <span class="detail-value">${alimTarihi}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">İade Tarihi:</span>
+                    <span class="detail-value">${iadeTarihi}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Tarayıcı:</span>
+                    <span class="detail-value" title="${escapeHtml(islem.userAgent)}">${escapeHtml((islem.userAgent || '-').split(' ')[0])}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">IP Adresi:</span>
+                    <span class="detail-value">${escapeHtml(islem.ipAddress || '-')}</span>
+                </div>
+            </div>
+            <div class="detail-modal-actions">
+                <button class="btn-secondary" onclick="this.closest('.detail-modal').remove();">Kapat</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
 }
 
 function islemOnayla(id) {
@@ -266,7 +362,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function loadMore() {
-    islemGetir(currentPage + 1, true);
+    if (isLoadingMore) return;
+    if (!hasMore) return;
+    
+    isLoadingMore = true;
+    setTimeout(() => {
+        islemGetir(currentPage + 1, true);
+        isLoadingMore = false;
+    }, 200);
 }
 
 function filterChanged() {
@@ -274,10 +377,6 @@ function filterChanged() {
     const durum = document.getElementById('durumFilter')?.value || '';
     islemGetir(1, false);
 }
-
-window.addEventListener('DOMContentLoaded', () => {
-    islemGetir(1, false);
-});
 
 function showMetadata(metaStr) {
     const modal = document.getElementById('metadataModal');
