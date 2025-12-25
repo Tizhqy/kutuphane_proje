@@ -83,12 +83,10 @@
                     <div class="filter-group">
                         <h4>Kategori</h4>
                         <div class="filter-options">
-                            <label><input type="checkbox" checked> Tüm Kategoriler</label>
-                            <label><input type="checkbox"> Bilgisayar Bilimleri</label>
-                            <label><input type="checkbox"> Matematik</label>
-                            <label><input type="checkbox"> Fizik</label>
-                            <label><input type="checkbox"> Edebiyat</label>
-                            <label><input type="checkbox"> Tarih</label>
+                            <select id="kategoriFilter" class="filter-select">
+                                <option value="">Tüm Kategoriler</option>
+                                <!-- Dinamik kategoriler yüklenecek -->
+                            </select>
                         </div>
                     </div>
 
@@ -102,14 +100,18 @@
                     </div>
 
                     <div class="filter-group">
-                        <h4>Yıl</h4>
-                        <select class="filter-select">
-                            <option>Tüm Yıllar</option>
-                            <option>2024</option>
-                            <option>2023</option>
-                            <option>2022</option>
-                            <option>2021</option>
-                        </select>
+                        <h4>Yayın Yılı</h4>
+                        <div class="form-row" style="gap:8px; align-items:center;">
+                            <div class="form-group" style="max-width:140px;">
+                                <label>Min</label>
+                                <input type="number" class="year-min" placeholder="min" style="width:120px;">
+                            </div>
+                            <div class="form-group" style="max-width:140px;">
+                                <label>Max</label>
+                                <input type="number" class="year-max" placeholder="max" style="width:120px;">
+                            </div>
+                            <button class="btn btn-apply year-apply-btn" style="padding:6px 10px;">Uygula</button>
+                        </div>
                     </div>
                 </div>
 

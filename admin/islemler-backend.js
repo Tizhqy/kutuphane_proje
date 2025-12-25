@@ -30,9 +30,10 @@ async function loadIslemStats() {
         const islemler = payload.data ?? [];
         
         const toplamIslem = payload.total || islemler.length;
-        const odunc = islemler.filter(i => i.islemTuru === 'odunc').length;
-        const iade = islemler.filter(i => i.islemTuru === 'iade').length;
-        const rezervasyon = islemler.filter(i => i.islemTuru === 'rezervasyon').length;
+        // İslem türü değil, durum'a göre say
+        const odunc = islemler.filter(i => i.durum === 'odunc' || i.durum === 'geciken').length;
+        const iade = islemler.filter(i => i.durum === 'iade').length;
+        const rezervasyon = islemler.filter(i => i.durum === 'rezervasyon').length;
         
         const stats = document.querySelectorAll('.stat-card');
         if (stats[0]) stats[0].querySelector('.stat-number').textContent = toplamIslem;

@@ -139,5 +139,64 @@ namespace ktphnAPI.Controllers
 
             return CreatedAtAction("GetUye", new { id = uye.Id }, dto);
         }
+
+        [HttpPut]
+        public async Task<IActionResult> UpdateProfile([FromBody] UyeUpdateDto dto)
+        {
+            var uyeIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(uyeIdClaim) || !int.TryParse(uyeIdClaim, out int uyeId))
+            {
+                return Unauthorized();
+            }
+
+            var uye = await _context.Uyeler.FindAsync(uyeId);
+            if (uye == null)
+            {
+                return NotFound("Kullanıcı bulunamadı.");
+            }
+
+            // Model validasyonu
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Ad Soyad güncelle
+            if (!string.IsNullOrWhiteSpace(dto.AdSoyad))
+            {
+                uye.AdSoyad = dto.AdSoyad.Trim();
+            }
+
+            // Email güncelle
+            if (!string.IsNullOrWhiteSpace(dto.Email))
+            {
+                uye.Email = dto.Email.ToLower().Trim();
+            }
+
+            // Telefon güncelle
+            if (!string.IsNullOrWhiteSpace(dto.Telefon))
+            {
+                uye.Telefon = dto.Telefon.Trim();
+            }
+            else
+            {
+                uye.Telefon = null;
+            }
+
+            // Öğrenci No güncelle
+            if (!string.IsNullOrWhiteSpace(dto.OgrenciNo))
+            {
+                uye.OgrenciNo = dto.OgrenciNo.Trim();
+            }
+            else
+            {
+                uye.OgrenciNo = null;
+            }
+
+            _context.Uyeler.Update(uye);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { mesaj = "Profil başarıyla güncellendi." });
+        }
     }
 }

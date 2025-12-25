@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function () {
     uyeleriGetir();
     setupSearchHandlers();
     setupWindowScroll();
+    setupAddUyeButton();
 });
 
 async function loadUyeStats() {
@@ -45,8 +46,131 @@ function setupWindowScroll() {
     });
 }
 
-function setupInfiniteScroll() {
-    // Not needed anymore - using window scroll instead
+function setupAddUyeButton() {
+    const addBtn = document.getElementById('addUye');
+    if (addBtn) {
+        addBtn.addEventListener('click', showAddUyeModal);
+    }
+}
+
+function showAddUyeModal() {
+    const modal = document.createElement('div');
+    modal.className = 'detail-modal';
+    modal.innerHTML = `
+        <div class="detail-modal-content" style="max-width: 500px;">
+            <button class="detail-modal-close" onclick="this.closest('.detail-modal').remove()">✕</button>
+            <h2>Yeni Üye Ekle</h2>
+            <div style="margin: 20px 0;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Ad Soyad: <span style="color: red;">*</span></label>
+                    <input type="text" id="addUyeAdi" placeholder="Üye adını giriniz" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Email: <span style="color: red;">*</span></label>
+                    <input type="email" id="addMail" placeholder="Üye e-mailini giriniz" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Telefon:</label>
+                    <input type="text" id="addTel" placeholder="Telefon giriniz" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Öğrenci Numarası:</label>
+                    <input type="text" id="addOgno" placeholder="Öğrenci numarası" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Durum:</label>
+                    <select id="addDurum" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                        <option value="aktif">Aktif</option>
+                        <option value="pasif">Pasif</option>
+                        <option value="askida">Askıda</option>
+                    </select>
+                </div>
+            </div>
+            <div class="detail-modal-actions">
+                <button class="btn-edit" onclick="saveNewUye()">Ekle</button>
+                <button class="btn-secondary" onclick="this.closest('.detail-modal').remove();">Vazgeç</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+async function saveNewUye() {
+    const adSoyad = document.getElementById('addUyeAdi').value.trim();
+    const email = document.getElementById('addMail').value.trim();
+    const telefon = document.getElementById('addTel').value.trim();
+    const ogrenciNo = document.getElementById('addOgno').value.trim();
+    const durum = document.getElementById('addDurum').value;
+
+    // Zorunlu alanlar kontrolü
+    if (!adSoyad || !email) {
+        showToast('Ad soyad ve email zorunludur', 'error');
+        return;
+    }
+
+    // Email format kontrolü
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showToast('Geçerli bir email adresi giriniz', 'error');
+        return;
+    }
+
+    // Ad Soyad'ı ayır (backend Ad ve Soyad ayrı bekliyor)
+    const nameParts = adSoyad.split(' ');
+    const ad = nameParts[0] || adSoyad;
+    const soyad = nameParts.slice(1).join(' ') || ad;
+
+    try {
+        const token = localStorage.getItem('kutuphane_token');
+        if (!token) {
+            showToast('Oturum sonlandırıldı', 'error');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // Üye kaydı için POST isteği
+        const res = await fetch('http://localhost:5165/api/auth/register', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                Ad: ad,
+                Soyad: soyad,
+                Email: email,
+                Sifre: 'Temp@123' // Geçici şifre (admin tarafından atanabilir)
+            })
+        });
+
+        if (res.status === 401) {
+            showToast('Oturum süreniz doldu', 'error');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        if (res.status === 403) {
+            showToast('Bu işlem için admin yetkisi gerekir', 'error');
+            return;
+        }
+
+        if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            showToast(errorData.mesaj || errorData.message || 'Üye eklenirken hata oluştu', 'error');
+            return;
+        }
+
+        showToast('Üye başarıyla eklendi', 'success');
+        document.querySelectorAll('.detail-modal').forEach(m => m.remove());
+        
+        setTimeout(() => {
+            uyeleriGetir();
+            loadUyeStats();
+        }, 500);
+    } catch (error) {
+        console.error('Hata:', error);
+        showToast('Üye eklenirken hata oluştu', 'error');
+    }
 }
 
 function setupSearchHandlers() {
@@ -146,15 +270,15 @@ function displayUyelerPage(startIndex) {
         const satir = `
             <tr>
                 <td>${uye.id}</td>
-                <td>${uye.adSoyad}</td>
-                <td>${uye.email}</td>
-                <td>${uye.telefon || '-'}</td>
-                <td>${rolHTML}</td> <td>${ogrenciNo}</td>
+                <td>${escapeHtml(uye.adSoyad)}</td>
+                <td>${escapeHtml(uye.email)}</td>
+                <td>${escapeHtml(uye.telefon || '-')}</td>
+                <td>${rolHTML}</td> <td>${escapeHtml(ogrenciNo)}</td>
                 <td>${kayitTarihi}</td>
                 <td><span class="${durumSinifi}">${durumYazisi}</span></td>
                 <td>
-                    <button class="btn-edit" onclick="showUyeDetail(${JSON.stringify(uye)})">Detay</button>
-                    <button class="btn-delete" onclick="showDeleteConfirm(${uye.id}, '${uye.adSoyad}', 'uye')">Sil</button>
+                    <button class="btn-edit" onclick="showUyeDetailById(${uye.id})">Detay</button>
+                    <button class="btn-delete" onclick="showDeleteConfirm(${uye.id}, '${escapeHtml(uye.adSoyad)}', 'uye')">Sil</button>
                 </td>
             </tr>
         `;
@@ -349,15 +473,15 @@ async function uyeleriAraAdvanced(query, durum) {
             const satir = `
                 <tr>
                     <td>${uye.id}</td>
-                    <td>${uye.adSoyad}</td>
-                    <td>${uye.email}</td>
-                    <td>${uye.telefon || '-'}</td>
-                    <td>${rolHTML}</td> <td>${ogrenciNo}</td>
+                    <td>${escapeHtml(uye.adSoyad)}</td>
+                    <td>${escapeHtml(uye.email)}</td>
+                    <td>${escapeHtml(uye.telefon || '-')}</td>
+                    <td>${rolHTML}</td> <td>${escapeHtml(ogrenciNo)}</td>
                     <td>${kayitTarihi}</td>
                     <td><span class="${durumSinifi}">${durumYazisi}</span></td>
                     <td>
-                        <button class="btn-edit" onclick="showUyeDetail({id: ${uye.id}, adSoyad: '${uye.adSoyad}', email: '${uye.email}', telefon: '${uye.telefon || '-'}', ogrenciNo: '${uye.ogrenciNo || '-'}', durum: '${uye.durum}', kayitTarihi: '${kayitTarihi}', rolIsimleri: ${JSON.stringify(uye.rolIsimleri || [])}})">Detay</button>
-                        <button class="btn-delete" onclick="showDeleteConfirm(${uye.id}, '${uye.adSoyad}')">Sil</button>
+                        <button class="btn-edit" onclick="showUyeDetailById(${uye.id})">Detay</button>
+                        <button class="btn-delete" onclick="showDeleteConfirm(${uye.id}, '${escapeHtml(uye.adSoyad)}', 'uye')">Sil</button>
                     </td>
                 </tr>
             `;
@@ -374,6 +498,16 @@ function uyeDuzenle(id) {
     console.log("Düzenlenecek ID:", id);
 }
 
+// ID'ye göre üye detayını göster
+function showUyeDetailById(id) {
+    const uye = allUyelerData.find(u => u.id === id);
+    if (!uye) {
+        showToast('Üye bulunamadı', 'error');
+        return;
+    }
+    showUyeDetail(uye);
+}
+
 // Üye detay popup'ını göster
 function escapeHtmlUye(str) {
     if (str === null || str === undefined) return '';
@@ -385,7 +519,7 @@ function escapeHtmlUye(str) {
         .replace(/'/g, '&#039;');
 }
 
-function showUyeDetail(uye) {
+async function showUyeDetail(uye) {
     let durumYazisi = 'Aktif';
     if (uye.durum === 'pasif') durumYazisi = 'Pasif';
     else if (uye.durum === 'askida') durumYazisi = 'Askıda';
@@ -428,6 +562,14 @@ function showUyeDetail(uye) {
                     <span class="detail-label">Durum:</span>
                     <span class="detail-value">${durumYazisi}</span>
                 </div>
+                <div class="detail-row">
+                    <span class="detail-label">Aktif Ödünç:</span>
+                    <span class="detail-value" id="uye-aktif-odunc-${uye.id}">Yükleniyor...</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Aktif Ceza:</span>
+                    <span class="detail-value" id="uye-aktif-ceza-${uye.id}">Yükleniyor...</span>
+                </div>
             </div>
             <div class="detail-modal-actions">
                 <button class="btn-edit" onclick="showUyeEditModal(${uye.id})">Düzenle</button>
@@ -437,6 +579,30 @@ function showUyeDetail(uye) {
         </div>
     `;
     document.body.appendChild(modal);
+
+    // Ek detayları getir
+    try {
+        const token = localStorage.getItem('kutuphane_token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const [islemRes, cezaRes] = await Promise.all([
+            fetch(`http://localhost:5165/api/islemler?page=1&pageSize=50&durum=odunc&uyeId=${uye.id}`, { headers }),
+            fetch(`http://localhost:5165/api/cezalar?page=1&pageSize=1&durum=aktif&uyeId=${uye.id}`, { headers })
+        ]);
+        if (islemRes.ok) {
+            const payload = await islemRes.json();
+            const aktifOdunc = (payload.data ?? []).filter(x => !x.iadeTarihi).length;
+            const el = document.getElementById(`uye-aktif-odunc-${uye.id}`);
+            if (el) el.textContent = String(aktifOdunc);
+        }
+        if (cezaRes.ok) {
+            const payload = await cezaRes.json();
+            const aktifCeza = typeof payload.total === 'number' ? payload.total : ((payload.data ?? []).length);
+            const el = document.getElementById(`uye-aktif-ceza-${uye.id}`);
+            if (el) el.textContent = String(aktifCeza);
+        }
+    } catch (e) {
+        // sessiz geç
+    }
 }
 
 function showUyeEditModal(uyeId) {

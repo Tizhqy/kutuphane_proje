@@ -6,12 +6,15 @@ const pageSize = 20;
 let currentSearchQuery = '';
 let currentKategoriFilter = '';
 let currentDurumFilter = '';
+let currentYearMin = null;
+let currentYearMax = null;
 
 document.addEventListener('DOMContentLoaded', function () {
     kitapGetir(1, false); // İlk yükleme
     setupModalHandlers();
     setupInfiniteScroll();
     setupSearchHandlers();
+    loadDistinctFilters();
     // Past tarih seçimini engelle
     const dateEl = document.getElementById('reservationDate');
     if (dateEl) {
@@ -50,11 +53,7 @@ function setupSearchHandlers() {
                 const query = this.value.trim();
                 currentSearchQuery = query;
                 currentPage = 1;
-                if (query) {
-                    searchKitaplar(1, false);
-                } else {
-                    kitapGetir(1, false);
-                }
+                applyAllFilters();
             }
         });
     }
@@ -67,11 +66,14 @@ function setupSearchHandlers() {
                 const query = this.value.trim();
                 currentSearchQuery = query;
                 currentPage = 1;
-                if (query) {
-                    searchKitaplar(1, false);
-                } else {
-                    kitapGetir(1, false);
-                }
+                applyAllFilters();
+            }
+        });
+        
+        // Input temizlendiğinde search query'yi sıfırla
+        catalogSearchInput.addEventListener('input', function() {
+            if (!this.value.trim()) {
+                currentSearchQuery = '';
             }
         });
     }
@@ -83,33 +85,21 @@ function setupSearchHandlers() {
             const query = document.querySelector('.catalog-search-input')?.value?.trim() || '';
             currentSearchQuery = query;
             currentPage = 1;
-            if (query) {
-                searchKitaplar(1, false);
-            } else {
-                kitapGetir(1, false);
-            }
+            applyAllFilters();
         });
     }
 
-    // Kategori filtreleri
-    const kategoriCheckboxes = document.querySelectorAll('.filter-options input[type="checkbox"]');
-    kategoriCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            if (this.textContent.includes('Tüm')) return;
-            const selectedCategories = Array.from(kategoriCheckboxes)
-                .filter(c => c.checked && !c.parentElement.textContent.includes('Tüm'))
-                .map(c => c.parentElement.textContent.trim());
-            currentKategoriFilter = selectedCategories[0] || '';
+    // Kategori dropdown filtresi
+    const kategoriSelect = document.getElementById('kategoriFilter');
+    if (kategoriSelect) {
+        kategoriSelect.addEventListener('change', function() {
+            currentKategoriFilter = this.value || '';
             currentPage = 1;
-            if (currentSearchQuery || currentKategoriFilter || currentDurumFilter) {
-                searchKitaplar(1, false);
-            } else {
-                kitapGetir(1, false);
-            }
+            applyAllFilters();
         });
-    });
+    }
 
-    // Durum filtreleri
+    // Durum filtreleri (Müsait -> musait, Ödünç Verilmiş -> odunc)
     const durumRadios = document.querySelectorAll('input[name="status"]');
     durumRadios.forEach(radio => {
         radio.addEventListener('change', function() {
@@ -117,20 +107,61 @@ function setupSearchHandlers() {
                 currentDurumFilter = '';
             } else {
                 const durumTexts = {
-                    'Müsait': 'uygun',
+                    'Müsait': 'musait',
                     'Ödünç Verilmiş': 'odunc'
                 };
                 const text = this.parentElement.textContent.trim();
                 currentDurumFilter = durumTexts[text] || '';
             }
             currentPage = 1;
-            if (currentSearchQuery || currentKategoriFilter || currentDurumFilter) {
-                searchKitaplar(1, false);
-            } else {
-                kitapGetir(1, false);
-            }
+            applyAllFilters();
         });
     });
+
+    // Yıl filtreleri (Enter ve 'Uygula' butonu ile)
+    const yearMinEl = document.querySelector('.year-min');
+    const yearMaxEl = document.querySelector('.year-max');
+    const yearApplyBtn = document.querySelector('.year-apply-btn');
+
+    function onYearApply() {
+        const minVal = yearMinEl?.value?.trim();
+        const maxVal = yearMaxEl?.value?.trim();
+        
+        // Boş ise null, değer varsa integer'a çevir
+        currentYearMin = minVal ? parseInt(minVal, 10) : null;
+        currentYearMax = maxVal ? parseInt(maxVal, 10) : null;
+        
+        // NaN kontrolü
+        if (currentYearMin !== null && isNaN(currentYearMin)) currentYearMin = null;
+        if (currentYearMax !== null && isNaN(currentYearMax)) currentYearMax = null;
+
+        currentPage = 1;
+        applyAllFilters();
+    }
+
+    if (yearMinEl) {
+        yearMinEl.addEventListener('keypress', e => { if (e.key === 'Enter') onYearApply(); });
+    }
+    if (yearMaxEl) {
+        yearMaxEl.addEventListener('keypress', e => { if (e.key === 'Enter') onYearApply(); });
+    }
+    if (yearApplyBtn) {
+        yearApplyBtn.addEventListener('click', onYearApply);
+    }
+}
+
+// Tüm filtreleri uygula (search query hariç)
+function applyAllFilters() {
+    // Eğer herhangi bir filtre varsa search endpoint kullan
+    if (currentKategoriFilter || currentDurumFilter || currentYearMin !== null || currentYearMax !== null) {
+        searchKitaplar(1, false);
+    } else if (currentSearchQuery) {
+        // Sadece search query varsa
+        searchKitaplar(1, false);
+    } else {
+        // Hiçbir filtre yoksa normal liste
+        kitapGetir(1, false);
+    }
 }
 
 function searchKitaplar(page = 1, append = false) {
@@ -144,6 +175,8 @@ function searchKitaplar(page = 1, append = false) {
     if (currentSearchQuery) params.append('q', currentSearchQuery);
     if (currentKategoriFilter) params.append('kategori', currentKategoriFilter);
     if (currentDurumFilter) params.append('durum', currentDurumFilter);
+    if (currentYearMin !== null) params.append('minYil', currentYearMin);
+    if (currentYearMax !== null) params.append('maxYil', currentYearMax);
 
     const apiurl = `http://localhost:5165/api/kitaplar/public/search?${params.toString()}`;
 
@@ -196,17 +229,17 @@ function searchKitaplar(page = 1, append = false) {
                 const id = kitap.id ?? kitap.kitapId;
                 BOOK_MAP[id] = { ...kitap, id };
                 let durumSinifi = 'available';
-                let durumYazisi = 'Mevcut';
+                let durumYazisi = 'Müsait';
                 let rezerveYazisi = 'Ödünç Al';
 
                 if (kitap.durum === 'odunc') {
                     durumSinifi = 'borrowed';
                     durumYazisi = 'Ödünçte';
-                    rezerveYazisi = 'Rezerve Et'
+                    rezerveYazisi = 'Rezerve Et';
                 } else if (kitap.durum === 'bakim') {
                     durumSinifi = 'overdue';
                     durumYazisi = 'Bakımda';
-                    rezerveYazisi ='Bakımda';
+                    rezerveYazisi = 'Bakımda';
                 }
 
                 const satir = `
@@ -251,6 +284,42 @@ function searchKitaplar(page = 1, append = false) {
             showToast('Backend ile bağlantı olmadı', 'error');
             isLoading = false;
         });
+}
+
+async function loadDistinctFilters() {
+    const token = localStorage.getItem('kutuphane_token');
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+    try {
+        // Kategoriler
+        const catRes = await fetch('http://localhost:5165/api/kitaplar/public/distinct-kategoriler', { headers });
+        if (catRes.ok) {
+            const catData = await catRes.json();
+            const list = catData.data || [];
+            const selectEl = document.getElementById('kategoriFilter');
+            if (selectEl) {
+                // "Tüm Kategoriler" zaten HTML'de var, sadece kategorileri ekle
+                list.forEach(k => {
+                    const option = document.createElement('option');
+                    option.value = k;
+                    option.textContent = k;
+                    selectEl.appendChild(option);
+                });
+            }
+        }
+        // Yıl aralığı
+        const yilRes = await fetch('http://localhost:5165/api/kitaplar/public/yil-araligi', { headers });
+        if (yilRes.ok) {
+            const yr = await yilRes.json();
+            const minEl = document.querySelector('.year-min');
+            const maxEl = document.querySelector('.year-max');
+            if (minEl && yr.min) minEl.placeholder = String(yr.min);
+            if (maxEl && yr.max) maxEl.placeholder = String(yr.max);
+            window.__dbMinYil = (typeof yr.min === 'number') ? yr.min : null;
+            window.__dbMaxYil = (typeof yr.max === 'number') ? yr.max : null;
+        }
+    } catch (err) {
+        console.error('Filtre yükleme hatası:', err);
+    }
 }
 
 function kitapGetir(page = 1, append = false) {
@@ -308,17 +377,17 @@ function kitapGetir(page = 1, append = false) {
                 const id = kitap.id ?? kitap.kitapId;
                 BOOK_MAP[id] = { ...kitap, id };
                 let durumSinifi = 'available';
-                let durumYazisi = 'Mevcut';
+                let durumYazisi = 'Müsait';
                 let rezerveYazisi = 'Ödünç Al';
 
                 if (kitap.durum === 'odunc') {
                     durumSinifi = 'borrowed';
                     durumYazisi = 'Ödünçte';
-                    rezerveYazisi = 'Rezerve Et'
+                    rezerveYazisi = 'Rezerve Et';
                 } else if (kitap.durum === 'bakim') {
                     durumSinifi = 'overdue';
                     durumYazisi = 'Bakımda';
-                    rezerveYazisi ='Bakımda';
+                    rezerveYazisi = 'Bakımda';
                 }
 
                 const satir = `
@@ -448,7 +517,7 @@ function openKitapModal(kitap) {
     const borrowBtn = document.getElementById('borrowBtn');
     const resWrap = document.getElementById('modalReservations');
     const available = (kitap.durum === 'musait' || kitap.durum === 'mevcut');
-    statusEl.textContent = available ? 'Durum: Mevcut' : (kitap.durum === 'odunc' ? 'Durum: Ödünçte' : 'Durum: Bakımda');
+    statusEl.textContent = available ? 'Durum: Müsait' : (kitap.durum === 'odunc' ? 'Durum: Ödünçte' : 'Durum: Bakımda');
     
     borrowBtn.disabled = !available;
     borrowBtn.setAttribute('data-id', kitap.id);

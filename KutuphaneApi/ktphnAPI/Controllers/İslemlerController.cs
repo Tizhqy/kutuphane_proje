@@ -129,6 +129,30 @@ namespace ktphnAPI.Controllers
             }
         }
 
+        [HttpGet("toplam-okudugum")]
+        [Authorize]
+        public async Task<IActionResult> ToplamOkudugum()
+        {
+            try
+            {
+                var uyeIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(uyeIdClaim) || !int.TryParse(uyeIdClaim, out int uyeId))
+                {
+                    return Unauthorized(new { success = false, message = "Oturum bulunamadı!" });
+                }
+
+                var totalRead = await _context.İslemler
+                    .Where(i => i.UyeId == uyeId && i.İslemTuru == "odunc" && i.IadeTarihi != null)
+                    .CountAsync();
+
+                return Ok(new { success = true, total = totalRead });
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Veri alınırken hata oluştu.", detail = ex.Message });
+            }
+        }
+
         [HttpPost("odunc-al")]
         [Authorize]
         public async Task<IActionResult> OduncAl([FromBody] OduncAlRequest request)
@@ -173,9 +197,9 @@ namespace ktphnAPI.Controllers
 
                 _context.İslemler.Add(islem);
                 
-                // Update book status to "odunc" (borrowed)
-                kitap.Durum = "odunc";
-                _context.Kitaplar.Update(kitap);
+                // NOT: Kitap durumu trigger tarafından güncelleniyor (kitap_odunc_after_insert)
+                // kitap.Durum = "odunc";
+                // _context.Kitaplar.Update(kitap);
 
                 await _context.SaveChangesAsync();
 
@@ -229,13 +253,9 @@ namespace ktphnAPI.Controllers
 
                 var remoteIp = HttpContext.Connection?.RemoteIpAddress?.MapToIPv4()?.ToString() ?? string.Empty;
                 var userAgent = Request.Headers["User-Agent"].ToString();
-                var meta = new { action = "iade-et", source = "api", updatedAt = DateTime.UtcNow };
 
                 islem.IadeTarihi = DateTime.UtcNow;
                 islem.Durum = "iade";
-                islem.UserAgent = userAgent;
-                islem.IpAddress = remoteIp;
-                islem.Metadata = JsonSerializer.Serialize(meta);
                 _context.İslemler.Update(islem);
 
                 // Başka ödünç kaydı yoksa kitabı mevcut yap
@@ -245,15 +265,16 @@ namespace ktphnAPI.Controllers
                                    i.IadeTarihi == null && 
                                    i.Id != islem.Id);
 
-                if (!otherLoanExists)
-                {
-                    var kitap = await _context.Kitaplar.FindAsync(islem.KitapId);
-                    if (kitap != null)
-                    {
-                        kitap.Durum = "musait";
-                        _context.Kitaplar.Update(kitap);
-                    }
-                }
+                // NOT: Kitap durumu trigger tarafından güncelleniyor (kitap_iade_after_update)
+                // if (!otherLoanExists)
+                // {
+                //     var kitap = await _context.Kitaplar.FindAsync(islem.KitapId);
+                //     if (kitap != null)
+                //     {
+                //         kitap.Durum = "musait";
+                //         _context.Kitaplar.Update(kitap);
+                //     }
+                // }
 
                 await _context.SaveChangesAsync();
 

@@ -150,6 +150,9 @@
                     return;
                 }
 
+                // Yardımcı: HTML attribute için basit kaçış
+                const escapeAttr = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
                 // Kitap bilgilerini render et
                 let rows = [];
                 for (const islem of data.data) {
@@ -159,6 +162,12 @@
                     const dueDate = new Date(islem.alimTarihi);
                     dueDate.setDate(dueDate.getDate() + 14);
 
+                    // Gecikmişse ceza tutarı hesapla (günlük 2 TL varsayımı)
+                    const overdueAmount = daysRemaining < 0 ? Math.abs(daysRemaining) * 2 : 0;
+                    const penaltyBtn = overdueAmount > 0 
+                        ? `<button class="btn-penalty" onclick="showPaymentModal(${overdueAmount})" style="background:#d32f2f; color:#fff; border:none; padding:0.5rem 1rem; border-radius:5px; cursor:pointer; font-size:0.9rem; margin-left:6px;">Ceza Öde (${overdueAmount.toFixed(2)} ₺)</button>`
+                        : '';
+
                     rows.push(`
                         <tr>
                             <td><strong>${islem.kitapAdi || 'Bilinmiyor'}</strong></td>
@@ -166,12 +175,44 @@
                             <td>${new Date(islem.alimTarihi).toLocaleDateString('tr-TR')}</td>
                             <td>${dueDate.toLocaleDateString('tr-TR')}</td>
                             <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                            <td><button class="btn-return" onclick="returnBook(${islem.id}, this)">İade Et</button></td>
+                            <td>
+                                <button class="btn-return" 
+                                    data-islem-id="${islem.id}"
+                                    data-kitap="${escapeAttr(islem.kitapAdi || '')}"
+                                    data-yazar="${escapeAttr(islem.yazar || '')}"
+                                    data-alim="${escapeAttr(islem.alimTarihi)}"
+                                >İade Et</button>${penaltyBtn}
+                            </td>
                         </tr>
                     `);
                 }
 
                 tbody.innerHTML = rows.join('');
+                // Event delegation: İade modalını aç
+                tbody.addEventListener('click', function(e) {
+                    const btn = e.target.closest('.btn-return');
+                    if (!btn) return;
+                    const row = btn.closest('tr');
+                    const islem = {
+                        id: parseInt(btn.dataset.islemId, 10),
+                        kitapAdi: btn.dataset.kitap,
+                        yazar: btn.dataset.yazar,
+                        alimTarihi: btn.dataset.alim
+                    };
+                    showReturnModal(islem, () => {
+                        if (row) {
+                            row.classList.add('fade-out');
+                            setTimeout(() => {
+                                row.remove();
+                                const tbodyEl = document.getElementById('myBooksTableBody');
+                                if (tbodyEl && tbodyEl.children.length === 0) {
+                                    document.getElementById('contentState').style.display = 'none';
+                                    document.getElementById('emptyState').style.display = 'block';
+                                }
+                            }, 220);
+                        }
+                    });
+                });
                 loadingEl.style.display = 'none';
                 emptyEl.style.display = 'none';
                 contentEl.style.display = 'block';
@@ -219,58 +260,7 @@
             return { statusClass, statusText };
         }
 
-        async function returnBook(islemId, btn) {
-            const token = localStorage.getItem('kutuphane_token');
-            if (!token) {
-                window.location.href = '../login.html';
-                return;
-            }
-
-            if (!confirm('Kitabı iade etmek istiyor musunuz?')) return;
-
-            try {
-                if (btn) {
-                    btn.disabled = true;
-                    btn.textContent = 'İade ediliyor...';
-                }
-
-                const res = await fetch('http://localhost:5165/api/islemler/iade-et', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ islemId })
-                });
-
-                if (!res.ok) throw new Error('İade hatası');
-
-                // Satırı yumuşak kaldır; boşaldıysa empty state göster
-                if (btn) {
-                    const row = btn.closest('tr');
-                    if (row) {
-                        row.classList.add('fade-out');
-                        setTimeout(() => {
-                            row.remove();
-                            const tbody = document.getElementById('myBooksTableBody');
-                            if (tbody && tbody.children.length === 0) {
-                                document.getElementById('contentState').style.display = 'none';
-                                document.getElementById('emptyState').style.display = 'block';
-                            }
-                        }, 220);
-                    }
-                }
-
-                showToast('Kitap iade edildi.', 'success');
-            } catch (error) {
-                console.error('İade hatası:', error);
-                showToast('Hata: ' + error.message, 'error');
-                if (btn) {
-                    btn.disabled = false;
-                    btn.textContent = 'İade Et';
-                }
-            }
-        }
+        // returnBook kaldırıldı; iade modalı üzerinden yapılır
     </script>
 </body>
 

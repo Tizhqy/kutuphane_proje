@@ -229,6 +229,30 @@ namespace ktphnAPI.Controllers
             }
         }
 
+        // Admin: Ceza silme (hard delete)
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "admin")]
+        public async Task<IActionResult> DeletePenalty(int id)
+        {
+            try
+            {
+                var ceza = await _context.CezaIslemleri.FirstOrDefaultAsync(c => c.Id == id);
+                if (ceza == null)
+                    return NotFound(new { success = false, message = "Ceza bulunamadı" });
+
+                _context.CezaIslemleri.Remove(ceza);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation($"Ceza silindi - CezaId: {id}");
+                return Ok(new { success = true, message = "Ceza silindi" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Ceza silme hatası: {ex.Message}");
+                return StatusCode(500, new { success = false, message = "Ceza silinirken hata oluştu.", detail = ex.Message });
+            }
+        }
+
         // Ceza konfigürasyonu getir
         [HttpGet("config/all")]
         [Authorize(Roles = "admin")]

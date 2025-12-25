@@ -710,6 +710,12 @@ footer a:visited {
     background: #303f9f;
 }
 
+.profile-right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
 .settings-section {
     background: white;
     padding: 2rem;

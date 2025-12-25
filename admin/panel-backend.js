@@ -48,6 +48,8 @@ document.addEventListener('DOMContentLoaded', function() {
     loadRecentTransactions();
     setupQuickActions();
     setupHeaderSearch();
+    setupAddKitapButton();
+    setupAddUyeButton();
 });
 
 async function loadPanelStats() {
@@ -55,24 +57,32 @@ async function loadPanelStats() {
         const token = localStorage.getItem('kutuphane_token');
         const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-        // Kitaplar verilerini al
-        const kitapRes = await fetch('http://localhost:5165/api/kitaplar', { headers });
+        // Kitap ve aktif ceza verilerini paralel çek
+        const [kitapRes, cezaRes] = await Promise.all([
+            fetch('http://localhost:5165/api/kitaplar', { headers }),
+            fetch('http://localhost:5165/api/cezalar?page=1&pageSize=1&durum=aktif', { headers })
+        ]);
+
         if (!kitapRes.ok) throw new Error('Kitaplar alınamadı');
+        if (!cezaRes.ok) throw new Error('Cezalar alınamadı');
+
         const kitapData = await kitapRes.json();
         const kitaplar = Array.isArray(kitapData) ? kitapData : (kitapData.data ?? []);
 
+        const cezaPayload = await cezaRes.json();
+        const aktifCezaToplam = typeof cezaPayload.total === 'number' ? cezaPayload.total : ((cezaPayload.data ?? []).length);
+
         // İstatistikleri hesapla
         const toplamKitap = kitaplar.length;
-        const mevcut = kitaplar.filter(k => k.durum === 'uygun' || k.durum !== 'odunc').length;
         const odunc = kitaplar.filter(k => k.durum === 'odunc').length;
-        const bakim = kitaplar.filter(k => k.durum === 'bakim').length;
+        const musait = kitaplar.filter(k => k.durum === 'musait').length;
 
-        // DOM'u güncelle
+        // DOM'u güncelle: 1)Toplam, 2)Ödünç, 3)Müsait, 4)Geç Kalan (aktif ceza)
         const stats = document.querySelectorAll('.stat-card');
         if (stats[0]) stats[0].querySelector('.stat-number').textContent = toplamKitap;
         if (stats[1]) stats[1].querySelector('.stat-number').textContent = odunc;
-        if (stats[2]) stats[2].querySelector('.stat-number').textContent = mevcut;
-        if (stats[3]) stats[3].querySelector('.stat-number').textContent = bakim;
+        if (stats[2]) stats[2].querySelector('.stat-number').textContent = musait;
+        if (stats[3]) stats[3].querySelector('.stat-number').textContent = aktifCezaToplam;
 
         showToast('Panel istatistikleri yüklendi', 'success');
     } catch (error) {
@@ -131,24 +141,246 @@ async function loadRecentTransactions() {
 }
 
 function setupQuickActions() {
-    const buttons = document.querySelectorAll('.action-buttons button');
-    
-    if (buttons[0]) {
-        buttons[0].addEventListener('click', function() {
-            window.location.href = 'kitaplar.html';
-        });
+    // Hızlı Eylemler butonları artık modal açacak
+    // setupAddKitapButton ve setupAddUyeButton tarafından yönetiliyor
+}
+
+function setupAddKitapButton() {
+    const addBtn = document.getElementById('addKitap');
+    if (addBtn) {
+        addBtn.addEventListener('click', showAddKitapModal);
     }
-    
-    if (buttons[1]) {
-        buttons[1].addEventListener('click', function() {
-            window.location.href = 'uyeler.html';
-        });
+}
+
+function showAddKitapModal() {
+    const modal = document.createElement('div');
+    modal.className = 'detail-modal';
+    modal.innerHTML = `
+        <div class="detail-modal-content" style="max-width: 500px;">
+            <button class="detail-modal-close" onclick="this.closest('.detail-modal').remove()">✕</button>
+            <h2>Yeni Kitap Ekle</h2>
+            <div style="margin: 20px 0;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Kitap Adı: <span style="color: red;">*</span></label>
+                    <input type="text" id="addKitapAdi" placeholder="Kitap adını giriniz" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Yazar: <span style="color: red;">*</span></label>
+                    <input type="text" id="addYazar" placeholder="Yazar adını giriniz" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Kategori:</label>
+                    <input type="text" id="addKategori" placeholder="Kategori giriniz" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">ISBN:</label>
+                    <input type="text" id="addIsbn" placeholder="ISBN numarası" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Yayın Yılı:</label>
+                    <input type="number" id="addYayinYili" placeholder="Örn: 2024" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Durum:</label>
+                    <select id="addDurumKitap" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                        <option value="musait">Müsait</option>
+                        <option value="odunc">Ödünçte</option>
+                        <option value="bakim">Bakımda</option>
+                    </select>
+                </div>
+            </div>
+            <div class="detail-modal-actions">
+                <button class="btn-edit" onclick="saveNewKitap()">Ekle</button>
+                <button class="btn-secondary" onclick="this.closest('.detail-modal').remove();">Vazgeç</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+async function saveNewKitap() {
+    const kitapAdi = document.getElementById('addKitapAdi').value.trim();
+    const yazar = document.getElementById('addYazar').value.trim();
+    const kategori = document.getElementById('addKategori').value.trim();
+    const isbn = document.getElementById('addIsbn').value.trim();
+    const yayinYili = document.getElementById('addYayinYili').value.trim();
+    const durum = document.getElementById('addDurumKitap').value;
+
+    if (!kitapAdi || !yazar) {
+        showToast('Kitap adı ve yazar zorunludur', 'error');
+        return;
     }
-    
-    if (buttons[2]) {
-        buttons[2].addEventListener('click', function() {
-            window.location.href = 'islemler.html';
+
+    try {
+        const token = localStorage.getItem('kutuphane_token');
+        if (!token) {
+            showToast('Oturum sonlandırıldı', 'error');
+            window.location.href = '../login.html';
+            return;
+        }
+
+        const body = { kitapAdi, yazar, durum };
+        if (kategori) body.kategori = kategori;
+        if (isbn) body.isbn = isbn;
+        if (yayinYili) body.yayinYili = parseInt(yayinYili);
+
+        const res = await fetch('http://localhost:5165/api/kitaplar', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
         });
+
+        if (res.status === 401) {
+            showToast('Oturum süreniz doldu', 'error');
+            window.location.href = '../login.html';
+            return;
+        }
+
+        if (res.status === 403) {
+            showToast('Bu işlem için admin yetkisi gerekir', 'error');
+            return;
+        }
+
+        if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            showToast(errorData.message || 'Kitap eklenirken hata oluştu', 'error');
+            return;
+        }
+
+        showToast('Kitap başarıyla eklendi', 'success');
+        document.querySelectorAll('.detail-modal').forEach(m => m.remove());
+        
+        setTimeout(() => {
+            loadPanelStats();
+            loadRecentTransactions();
+        }, 500);
+    } catch (error) {
+        console.error('Hata:', error);
+        showToast('Kitap eklenirken hata oluştu', 'error');
+    }
+}
+
+function setupAddUyeButton() {
+    const addBtn = document.getElementById('addUye');
+    if (addBtn) {
+        addBtn.addEventListener('click', showAddUyeModal);
+    }
+}
+
+function showAddUyeModal() {
+    const modal = document.createElement('div');
+    modal.className = 'detail-modal';
+    modal.innerHTML = `
+        <div class="detail-modal-content" style="max-width: 500px;">
+            <button class="detail-modal-close" onclick="this.closest('.detail-modal').remove()">✕</button>
+            <h2>Yeni Üye Ekle</h2>
+            <div style="margin: 20px 0;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Ad Soyad: <span style="color: red;">*</span></label>
+                    <input type="text" id="addUyeAdi" placeholder="Üye adını giriniz" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Email: <span style="color: red;">*</span></label>
+                    <input type="email" id="addMail" placeholder="Üye e-mailini giriniz" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Telefon:</label>
+                    <input type="text" id="addTel" placeholder="Telefon giriniz" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Öğrenci Numarası:</label>
+                    <input type="text" id="addOgno" placeholder="Öğrenci numarası" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Durum:</label>
+                    <select id="addDurumUye" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                        <option value="aktif">Aktif</option>
+                        <option value="pasif">Pasif</option>
+                        <option value="askida">Askıda</option>
+                    </select>
+                </div>
+            </div>
+            <div class="detail-modal-actions">
+                <button class="btn-edit" onclick="saveNewUye()">Ekle</button>
+                <button class="btn-secondary" onclick="this.closest('.detail-modal').remove();">Vazgeç</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+async function saveNewUye() {
+    const adSoyad = document.getElementById('addUyeAdi').value.trim();
+    const email = document.getElementById('addMail').value.trim();
+    const telefon = document.getElementById('addTel').value.trim();
+    const ogrenciNo = document.getElementById('addOgno').value.trim();
+    const durum = document.getElementById('addDurumUye').value;
+
+    if (!adSoyad || !email) {
+        showToast('Ad soyad ve email zorunludur', 'error');
+        return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showToast('Geçerli bir email adresi giriniz', 'error');
+        return;
+    }
+
+    try {
+        const token = localStorage.getItem('kutuphane_token');
+        if (!token) {
+            showToast('Oturum sonlandırıldı', 'error');
+            window.location.href = '../login.html';
+            return;
+        }
+
+        const res = await fetch('http://localhost:5165/api/auth/register', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                adSoyad,
+                email,
+                telefon: telefon || null,
+                ogrenciNo: ogrenciNo || null,
+                durum,
+                sifre: 'Temp@123'
+            })
+        });
+
+        if (res.status === 401) {
+            showToast('Oturum süreniz doldu', 'error');
+            window.location.href = '../login.html';
+            return;
+        }
+
+        if (res.status === 403) {
+            showToast('Bu işlem için admin yetkisi gerekir', 'error');
+            return;
+        }
+
+        if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            showToast(errorData.message || 'Üye eklenirken hata oluştu', 'error');
+            return;
+        }
+
+        showToast('Üye başarıyla eklendi', 'success');
+        document.querySelectorAll('.detail-modal').forEach(m => m.remove());
+        
+        setTimeout(() => {
+            loadPanelStats();
+            loadRecentTransactions();
+        }, 500);
+    } catch (error) {
+        console.error('Hata:', error);
+        showToast('Üye eklenirken hata oluştu', 'error');
     }
 }
 
@@ -194,7 +426,7 @@ function showKitapDetail(kitap) {
     document.body.appendChild(modal);
 }
 
-function showUyeDetail(uye) {
+async function showUyeDetail(uye) {
     let durumYazisi = 'Aktif';
     if (uye.durum === 'pasif') durumYazisi = 'Pasif';
     else if (uye.durum === 'askida') durumYazisi = 'Askıda';
@@ -232,6 +464,14 @@ function showUyeDetail(uye) {
                     <span class="detail-label">Durum:</span>
                     <span class="detail-value">${durumYazisi}</span>
                 </div>
+                <div class="detail-row">
+                    <span class="detail-label">Aktif Ödünç:</span>
+                    <span class="detail-value" id="uye-aktif-odunc-${uye.id}">Yükleniyor...</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Aktif Ceza:</span>
+                    <span class="detail-value" id="uye-aktif-ceza-${uye.id}">Yükleniyor...</span>
+                </div>
             </div>
             <div class="detail-modal-actions">
                 <button class="btn-edit" onclick="this.closest('.detail-modal').remove();">Kapat</button>
@@ -239,4 +479,28 @@ function showUyeDetail(uye) {
         </div>
     `;
     document.body.appendChild(modal);
+
+    // Ek ayrıntıları getir (aktif ödünç ve aktif ceza)
+    try {
+        const token = localStorage.getItem('kutuphane_token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const [islemRes, cezaRes] = await Promise.all([
+            fetch(`http://localhost:5165/api/islemler?page=1&pageSize=50&durum=odunc&uyeId=${uye.id}`, { headers }),
+            fetch(`http://localhost:5165/api/cezalar?page=1&pageSize=1&durum=aktif&uyeId=${uye.id}`, { headers })
+        ]);
+        if (islemRes.ok) {
+            const payload = await islemRes.json();
+            const aktifOdunc = (payload.data ?? []).filter(x => !x.iadeTarihi).length;
+            const el = document.getElementById(`uye-aktif-odunc-${uye.id}`);
+            if (el) el.textContent = String(aktifOdunc);
+        }
+        if (cezaRes.ok) {
+            const payload = await cezaRes.json();
+            const aktifCeza = typeof payload.total === 'number' ? payload.total : ((payload.data ?? []).length);
+            const el = document.getElementById(`uye-aktif-ceza-${uye.id}`);
+            if (el) el.textContent = String(aktifCeza);
+        }
+    } catch (e) {
+        // Sessizce geç
+    }
 }

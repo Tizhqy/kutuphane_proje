@@ -10,7 +10,134 @@ document.addEventListener('DOMContentLoaded', function () {
     loadKategoriler();
     setupSearchHandlers();
     setupWindowScroll();
+    setupAddKitapButton();
 });
+
+function setupAddKitapButton() {
+    const addBtn = document.getElementById('addKitap');
+    if (addBtn) {
+        addBtn.addEventListener('click', showAddKitapModal);
+    }
+}
+
+function showAddKitapModal() {
+    const modal = document.createElement('div');
+    modal.className = 'detail-modal';
+    modal.innerHTML = `
+        <div class="detail-modal-content" style="max-width: 500px;">
+            <button class="detail-modal-close" onclick="this.closest('.detail-modal').remove()">✕</button>
+            <h2>Yeni Kitap Ekle</h2>
+            <div style="margin: 20px 0;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Kitap Adı: <span style="color: red;">*</span></label>
+                    <input type="text" id="addKitapAdi" placeholder="Kitap adını giriniz" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Yazar: <span style="color: red;">*</span></label>
+                    <input type="text" id="addYazar" placeholder="Yazar adını giriniz" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Kategori:</label>
+                    <input type="text" id="addKategori" placeholder="Kategori giriniz" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">ISBN:</label>
+                    <input type="text" id="addIsbn" placeholder="ISBN numarası" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Yayın Yılı:</label>
+                    <input type="number" id="addYayinYili" placeholder="Örn: 2024" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Durum:</label>
+                    <select id="addDurum" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <option value="musait">Müsait</option>
+                        <option value="odunc">Ödünçte</option>
+                        <option value="bakim">Bakımda</option>
+                    </select>
+                </div>
+            </div>
+            <div class="detail-modal-actions">
+                <button class="btn-edit" onclick="saveNewKitap()">Ekle</button>
+                <button class="btn-secondary" onclick="this.closest('.detail-modal').remove();">Vazgeç</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+async function saveNewKitap() {
+    const kitapAdi = document.getElementById('addKitapAdi').value.trim();
+    const yazar = document.getElementById('addYazar').value.trim();
+    const kategori = document.getElementById('addKategori').value.trim();
+    const isbn = document.getElementById('addIsbn').value.trim();
+    const yayinYili = document.getElementById('addYayinYili').value.trim();
+    const durum = document.getElementById('addDurum').value;
+
+    // Zorunlu alanlar kontrolü
+    if (!kitapAdi || !yazar) {
+        showToast('Kitap adı ve yazar zorunludur', 'error');
+        return;
+    }
+
+    try {
+        const token = localStorage.getItem('kutuphane_token');
+        if (!token) {
+            showToast('Oturum sonlandırıldı', 'error');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        const body = {
+            kitapAdi,
+            yazar,
+            durum
+        };
+
+        // Opsiyonel alanları ekle
+        if (kategori) body.kategori = kategori;
+        if (isbn) body.isbn = isbn;
+        if (yayinYili) body.yayinYili = parseInt(yayinYili);
+
+        const res = await fetch('http://localhost:5165/api/kitaplar', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (res.status === 401) {
+            showToast('Oturum süreniz doldu', 'error');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        if (res.status === 403) {
+            showToast('Bu işlem için admin yetkisi gerekir', 'error');
+            return;
+        }
+
+        if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            showToast(errorData.message || 'Kitap eklenirken hata oluştu', 'error');
+            return;
+        }
+
+        showToast('Kitap başarıyla eklendi', 'success');
+        document.querySelectorAll('.detail-modal').forEach(m => m.remove());
+        
+        setTimeout(() => {
+            kitapGetir();
+            loadKitapStats();
+            loadKategoriler(); // Yeni kategori eklendiyse dropdown'ı güncelle
+        }, 500);
+    } catch (error) {
+        console.error('Hata:', error);
+        showToast('Kitap eklenirken hata oluştu', 'error');
+    }
+}
 
 function setupWindowScroll() {
     window.addEventListener('scroll', function() {
@@ -25,22 +152,34 @@ async function loadKitapStats() {
     try {
         const token = localStorage.getItem('kutuphane_token');
         const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-        const res = await fetch('http://localhost:5165/api/kitaplar', { headers });
-        if (!res.ok) return;
         
-        const kitapData = await res.json();
+        // Kitap ve ceza verilerini paralel çek
+        const [kitapRes, cezaRes] = await Promise.all([
+            fetch('http://localhost:5165/api/kitaplar', { headers }),
+            fetch('http://localhost:5165/api/cezalar?page=1&pageSize=1&durum=aktif', { headers })
+        ]);
+        
+        if (!kitapRes.ok) return;
+        
+        const kitapData = await kitapRes.json();
         const kitaplar = Array.isArray(kitapData) ? kitapData : (kitapData.data ?? []);
         
+        // Aktif ceza sayısını al
+        let aktifCezaToplam = 0;
+        if (cezaRes.ok) {
+            const cezaPayload = await cezaRes.json();
+            aktifCezaToplam = typeof cezaPayload.total === 'number' ? cezaPayload.total : ((cezaPayload.data ?? []).length);
+        }
+        
         const toplamKitap = kitaplar.length;
-        const mevcut = kitaplar.filter(k => k.durum !== 'odunc').length;
+        const musait = kitaplar.filter(k => k.durum === 'musait').length;
         const odunc = kitaplar.filter(k => k.durum === 'odunc').length;
-        const bakim = kitaplar.filter(k => k.durum === 'bakim').length;
         
         const stats = document.querySelectorAll('.stat-card');
         if (stats[0]) stats[0].querySelector('.stat-number').textContent = toplamKitap;
         if (stats[1]) stats[1].querySelector('.stat-number').textContent = odunc;
-        if (stats[2]) stats[2].querySelector('.stat-number').textContent = mevcut;
-        if (stats[3]) stats[3].querySelector('.stat-number').textContent = bakim;
+        if (stats[2]) stats[2].querySelector('.stat-number').textContent = musait;
+        if (stats[3]) stats[3].querySelector('.stat-number').textContent = aktifCezaToplam;
     } catch (error) {
         console.error('İstatistikler yüklenirken hata:', error);
     }
@@ -203,14 +342,7 @@ async function searchKitaplarAdvanced(query, kategori, durum) {
         const params = new URLSearchParams();
         if (query) params.append('q', query);
         if (kategori) params.append('kategori', kategori);
-        if (durum) {
-            // Durum eşlemesi: "mevcut" → backend'de mevcut değeri
-            if (durum === 'mevcut') {
-                params.append('durum', 'mevcut');
-            } else {
-                params.append('durum', durum);
-            }
-        }
+        if (durum) params.append('durum', durum);
         params.append('page', '1');
         params.append('pageSize', '1000');
         
@@ -251,14 +383,14 @@ async function searchKitaplarAdvanced(query, kategori, durum) {
 
             rows.push(`
                 <tr>
-                    <td>${escapeHtml(kitap.id)}</td>
+                    <td>${kitap.id}</td>
                     <td>${escapeHtml(kitap.kitapAdi)}</td>
                     <td>${escapeHtml(kitap.yazar)}</td>
                     <td>${escapeHtml(kitap.kategori || '-')}</td>
                     <td><span class="${durumSinifi}">${escapeHtml(durumYazisi)}</span></td>
                     <td>
-                        <button class="btn-edit" onclick="showKitapDetail({id: ${escapeHtml(kitap.id)}, kitapAdi: '${escapeHtml(kitap.kitapAdi)}', yazar: '${escapeHtml(kitap.yazar)}', kategori: '${escapeHtml(kitap.kategori || '-')}', isbn: '${escapeHtml(kitap.isbn || '-')}', durum: '${kitap.durum}'})">Detay</button>
-                        <button class="btn-delete" onclick="kitapSil(${escapeHtml(kitap.id)})">Sil</button>
+                        <button class="btn-edit" onclick="showKitapDetailById(${kitap.id})">Detay</button>
+                        <button class="btn-delete" onclick="kitapSil(${kitap.id})">Sil</button>
                     </td>
                 </tr>
             `);
@@ -337,14 +469,14 @@ function displayKitaplarPage(startIndex) {
 
         rows.push(`
             <tr>
-                <td>${escapeHtml(kitap.id)}</td>
+                <td>${kitap.id}</td>
                 <td>${escapeHtml(kitap.kitapAdi)}</td>
                 <td>${escapeHtml(kitap.yazar)}</td>
                 <td>${escapeHtml(kitap.kategori || '-')}</td>
                 <td><span class="${durumSinifi}">${escapeHtml(durumYazisi)}</span></td>
                 <td>
-                    <button class="btn-edit" onclick="showKitapDetail(${JSON.stringify(kitap)})">Detay</button>
-                    <button class="btn-delete" onclick="showDeleteConfirm(${kitap.id}, '${escapeHtml(kitap.kitapAdi)}', 'kitap'); this.closest('.detail-modal')?.remove();">Sil</button>
+                    <button class="btn-edit" onclick="showKitapDetailById(${kitap.id})">Detay</button>
+                    <button class="btn-delete" onclick="showDeleteConfirm(${kitap.id}, '${escapeHtml(kitap.kitapAdi)}', 'kitap')">Sil</button>
                 </td>
             </tr>
         `);
@@ -380,6 +512,16 @@ function kitapSil(id) {
 
 function kitapDuzenle(id) {
     console.log("Düzenlenecek:", id);
+}
+
+// ID'ye göre kitap detayını göster
+function showKitapDetailById(id) {
+    const kitap = allKitaplarData.find(k => k.id === id);
+    if (!kitap) {
+        showToast('Kitap bulunamadı', 'error');
+        return;
+    }
+    showKitapDetail(kitap);
 }
 
 // Kitap detay popup'ını göster

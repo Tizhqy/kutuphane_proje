@@ -11,6 +11,7 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
+using ktphnAPI.Services;
 
 namespace ktphnAPI.Controllers
 {
@@ -21,11 +22,15 @@ namespace ktphnAPI.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IConfiguration _config;
+        private readonly IEmailService _emailService;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(AppDbContext context, IConfiguration config)
+        public AuthController(AppDbContext context, IConfiguration config, IEmailService emailService, ILogger<AuthController> logger)
         {
             _context = context;
             _config = config;
+            _emailService = emailService;
+            _logger = logger;
         }
 
         [HttpPost("register")]
@@ -149,6 +154,7 @@ namespace ktphnAPI.Controllers
         }
 
         [HttpPost("change-password")]
+        [Authorize]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto istek)
         {
             // Model validasyonu
@@ -192,6 +198,74 @@ namespace ktphnAPI.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { mesaj = "Şifre başarıyla değiştirildi!" });
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto istek)
+        {
+            if (string.IsNullOrWhiteSpace(istek.Email))
+            {
+                return BadRequest(new { success = false, mesaj = "Email adresi gereklidir" });
+            }
+
+            var uye = await _context.Uyeler.FirstOrDefaultAsync(u => u.Email == istek.Email);
+            
+            // Güvenlik: Hesap olup olmadığını söyleme (timing attack prevention için her durumda aynı süre)
+            await Task.Delay(500);
+
+            if (uye == null)
+            {
+                // Hesap yoksa da mail gönder (kullanıcıya hesap olmadığını bildirmek için)
+                try
+                {
+                    await _emailService.SendEmailAsync(
+                        istek.Email,
+                        "Şifre Sıfırlama Talebi",
+                        $@"<html><body style='font-family: Arial;'>
+                            <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
+                                <h2 style='color: #d32f2f;'>⚠️ Hesap Bulunamadı</h2>
+                                <p>Bu e-posta adresi ile kayıtlı bir hesap bulunamadı.</p>
+                                <p>Eğer hesabınız yoksa, lütfen kayıt olun.</p>
+                                <p style='color: #666; font-size: 12px; margin-top: 20px;'>Bu bir otomatik mail'dir.</p>
+                            </div>
+                        </body></html>",
+                        isHtml: true
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Hesap bulunamadı maili gönderilemedi: {email}", istek.Email);
+                }
+                
+                return Ok(new { success = true, mesaj = "Eğer hesabınız varsa, e-posta adresinize şifre sıfırlama talimatları gönderildi." });
+            }
+
+            // Geçici şifre oluştur (8 karakter, karışık)
+            var yeniSifre = GenerateRandomPassword(8);
+            uye.Sifre = BCrypt.Net.BCrypt.HashPassword(yeniSifre);
+            await _context.SaveChangesAsync();
+
+            // Mail gönder
+            try
+            {
+                await _emailService.SendPasswordResetAsync(uye.Email, uye.AdSoyad, yeniSifre);
+                _logger.LogInformation("Şifre sıfırlama maili gönderildi: {email}", uye.Email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Şifre sıfırlama maili gönderilemedi: {email}", uye.Email);
+                return StatusCode(500, new { success = false, mesaj = "Mail gönderilirken hata oluştu" });
+            }
+
+            return Ok(new { success = true, mesaj = "Eğer hesabınız varsa, e-posta adresinize şifre sıfırlama talimatları gönderildi." });
+        }
+
+        private string GenerateRandomPassword(int length)
+        {
+            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
         [HttpPost("logout")]

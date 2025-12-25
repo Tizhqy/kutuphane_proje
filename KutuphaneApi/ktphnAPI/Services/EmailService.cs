@@ -14,6 +14,7 @@ namespace ktphnAPI.Services
         Task SendAdminCezaBildirimAsync(string adminEmail, string uyeAdi, string kitapAdi, decimal cezaTutari);
         Task SendTestEmailAsync(string to);
         Task SendOduncAlBildirimAsync(string uyeEmail, string uyeAdi, string kitapAdi, DateTime iadeTarihi);
+        Task SendPasswordResetAsync(string uyeEmail, string uyeAdi, string yeniSifre);
     }
 
     public class EmailService : IEmailService
@@ -249,6 +250,47 @@ namespace ktphnAPI.Services
                         </div>
                         <div class='footer'>
                             <p>Bu bir otomatik mail'dir. Lütfen cevap vermeyin.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            ";
+
+            await SendEmailAsync(uyeEmail, subject, body, isHtml: true);
+        }
+
+        public async Task SendPasswordResetAsync(string uyeEmail, string uyeAdi, string yeniSifre)
+        {
+            var subject = "Şifre Sıfırlama - Geçici Şifreniz";
+            var body = $@"
+                <html>
+                <head>
+                    <meta charset='UTF-8'>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; }}
+                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }}
+                        .header {{ background-color: #1a237e; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }}
+                        .content {{ padding: 20px; }}
+                        .password-box {{ background-color: #f5f5f5; padding: 15px; border-left: 4px solid #1a237e; margin: 15px 0; font-size: 18px; font-weight: bold; text-align: center; letter-spacing: 2px; }}
+                        .warning {{ color: #d32f2f; font-weight: bold; }}
+                        .footer {{ text-align: center; color: #666; font-size: 12px; margin-top: 20px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <div class='header'>
+                            <h2>🔐 Şifre Sıfırlama</h2>
+                        </div>
+                        <div class='content'>
+                            <p>Sayın {uyeAdi},</p>
+                            <p>Şifrenizi sıfırlama talebiniz alınmıştır. Aşağıdaki geçici şifre ile giriş yapabilirsiniz:</p>
+                            <div class='password-box'>{yeniSifre}</div>
+                            <p class='warning'>⚠️ Güvenliğiniz için giriş yaptıktan sonra lütfen şifrenizi değiştirin!</p>
+                            <p>Eğer bu talebi siz yapmadıysanız, lütfen derhal sistem yöneticisi ile iletişime geçin.</p>
+                        </div>
+                        <div class='footer'>
+                            <p>Bu bir otomatik mail'dir. Lütfen cevap vermeyin.</p>
+                            <p>&copy; 2025 Kütüphane Sistemi</p>
                         </div>
                     </div>
                 </body>

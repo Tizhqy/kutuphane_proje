@@ -465,7 +465,71 @@ async function cezaAffet(cezaId) {
 }
 
 function cezaSil(id) {
-    showToast('Ceza silme işlevi yakında eklenecek', 'info');
+    const modal = document.createElement('div');
+    modal.className = 'detail-modal';
+    modal.innerHTML = `
+        <div class="detail-modal-content" style="max-width: 420px;">
+            <button class="detail-modal-close" onclick="this.closest('.detail-modal').remove()">✕</button>
+            <h2>Ceza Silinsin mi?</h2>
+            <p style="margin: 12px 0 18px; color: #444;">Bu ceza kaydını kalıcı olarak silmek istiyor musunuz? Bu işlem geri alınamaz.</p>
+            <div class="detail-modal-actions">
+                <button class="btn-delete" id="confirmCezaDeleteBtn">Sil</button>
+                <button class="btn-secondary" onclick="this.closest('.detail-modal').remove();">Vazgeç</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const btn = modal.querySelector('#confirmCezaDeleteBtn');
+    if (btn) {
+        btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            try {
+                await performCezaDelete(id);
+                showToast('Ceza silindi', 'success');
+                document.querySelectorAll('.detail-modal').forEach(m => m.remove());
+                setTimeout(() => {
+                    cezaGetir();
+                    loadCezaStats();
+                }, 400);
+            } catch (err) {
+                console.error('Ceza silme hatası:', err);
+                showToast('Ceza silme başarısız', 'error');
+                btn.disabled = false;
+            }
+        });
+    }
+}
+
+async function performCezaDelete(cezaId) {
+    const token = localStorage.getItem('kutuphane_token');
+    if (!token) {
+        showToast('Oturum sonlandırıldı', 'error');
+        window.location.href = 'login.html';
+        throw new Error('No token');
+    }
+    const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+    };
+
+    let res;
+    try {
+        res = await fetch(`http://localhost:5165/api/cezalar/${cezaId}`, { method: 'DELETE', headers });
+        if (res.ok) return;
+    } catch (e) {
+        // ignore
+    }
+
+    const affeRes = await fetch(`http://localhost:5165/api/cezalar/${cezaId}/affe`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify('UI üzerinden silindi')
+    });
+
+    if (!affeRes.ok) {
+        throw new Error('Affe fallback failed');
+    }
 }
 
 // Detay popup fonksiyonları

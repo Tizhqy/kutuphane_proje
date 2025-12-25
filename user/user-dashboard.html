@@ -80,63 +80,34 @@
 
             <div class="user-stats">
                 <div class="stats-grid">
-                    <div class="stat-card">
+                    <a href="user-kitaplarim.html" class="stat-card" style="text-decoration:none; color:inherit;">
                         <i class="fas fa-book-open stat-icon"></i>
                         <div class="stat-number">3</div>
                         <div class="stat-label">Ödünç Aldığım Kitap</div>
-                    </div>
-                    <div class="stat-card available">
+                    </a>
+                    <a href="user-reservations.html" class="stat-card available" style="text-decoration:none; color:inherit;">
                         <i class="fas fa-calendar-check stat-icon"></i>
                         <div class="stat-number">0</div>
                         <div class="stat-label">Rezervasyonlar</div>
-                    </div>
-                    <div class="stat-card overdue">
+                    </a>
+                    <a href="user-kitaplarim.html" class="stat-card overdue" style="text-decoration:none; color:inherit;">
                         <i class="fas fa-exclamation-triangle stat-icon"></i>
                         <div class="stat-number">0</div>
                         <div class="stat-label">Geciken Kitap</div>
-                    </div>
-                    <div class="stat-card">
+                    </a>
+                    <a href="user-kitaplarim.html" class="stat-card" style="text-decoration:none; color:inherit;">
                         <i class="fas fa-history stat-icon"></i>
                         <div class="stat-number">3</div>
                         <div class="stat-label">Toplam Okuduğum</div>
-                    </div>
+                    </a>
                 </div>
             </div>
 
             <div class="user-dashboard-content">
                 <div class="my-books-section">
                     <h3><i class="fas fa-bookmark"></i> Şu An Okuduklarım</h3>
-                    <div class="books-list">
-                        <div class="book-item">
-                            <div class="book-info">
-                                <strong>A</strong>
-                                <p>A</p>
-                                <span class="due-date">İade Tarihi: 25.10.2024</span>
-                            </div>
-                            <div class="book-actions">
-                                <button class="btn-renew">Süre Uzat</button>
-                            </div>
-                        </div>
-                        <div class="book-item">
-                            <div class="book-info">
-                                <strong>B</strong>
-                                <p>B</p>
-                                <span class="due-date">İade Tarihi: 28.10.2024</span>
-                            </div>
-                            <div class="book-actions">
-                                <button class="btn-renew">Süre Uzat</button>
-                            </div>
-                        </div>
-                        <div class="book-item overdue">
-                            <div class="book-info">
-                                <strong>C</strong>
-                                <p>C</p>
-                                <span class="due-date overdue-text">Gecikmiş: 15.10.2024</span>
-                            </div>
-                            <div class="book-actions">
-                                <button class="btn-return">İade Et</button>
-                            </div>
-                        </div>
+                    <div class="books-list" id="currentBooksContainer">
+                        <p style="text-align: center; padding: 20px;">Yükleniyor...</p>
                     </div>
                 </div>
 
@@ -147,7 +118,7 @@
                             <i class="fas fa-search"></i>
                             <span>Kitap Ara</span>
                         </a>
-                        <a href="user-reservations.html" class="quick-action-btn">
+                        <a href="user-kitaplar.html" class="quick-action-btn">
                             <i class="fas fa-calendar-plus"></i>
                             <span>Rezervasyon Yap</span>
                         </a>
@@ -155,10 +126,14 @@
                             <i class="fas fa-user-edit"></i>
                             <span>Profili Düzenle</span>
                         </a>
-                        <a href="#" class="quick-action-btn">
+                        <a href="user-kitaplarim.html" class="quick-action-btn">
                             <i class="fas fa-history"></i>
                             <span>Geçmiş İşlemler</span>
                         </a>
+                        <button type="button" class="quick-action-btn" onclick="showPaymentModal()" style="border:none; background:transparent;">
+                            <i class="fas fa-credit-card"></i>
+                            <span>Ceza Öde</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -172,6 +147,7 @@
         <a href="../anasyafa.html">Anasayfa</a>
     </footer>
     <script src="user-common.js"></script>
+    <script src="dashboard-backend.js"></script>
 </body>
 
 </html>

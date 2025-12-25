@@ -73,8 +73,10 @@ namespace ktphnAPI.Controllers
         [Authorize]
         public async Task<IActionResult> SearchKitaplar(
             [FromQuery] string? q,           // Arama metni
-            [FromQuery] string? kategori,      // Kategori filtresi
-            [FromQuery] string? durum,         // Durum filtresi
+            [FromQuery] string? kategori,    // Kategori filtresi
+            [FromQuery] string? durum,       // Durum filtresi
+            [FromQuery] int? minYil,         // Min yayın yılı
+            [FromQuery] int? maxYil,         // Max yayın yılı
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
@@ -107,6 +109,22 @@ namespace ktphnAPI.Controllers
                     query = query.Where(k => k.Durum == durum);
                 }
 
+                // Yıl aralığı filtreleme
+                if (minYil.HasValue && maxYil.HasValue)
+                {
+                    query = query.Where(k => k.YayinYili.HasValue && k.YayinYili.Value >= minYil.Value && k.YayinYili.Value <= maxYil.Value);
+                }
+                else if (minYil.HasValue)
+                {
+                    // Sadece min verilirse: max olarak DB'deki en büyük yıl alınır
+                    var max = await _context.Kitaplar.Where(k => k.YayinYili.HasValue).MaxAsync(k => k.YayinYili) ?? int.MaxValue;
+                    query = query.Where(k => k.YayinYili.HasValue && k.YayinYili.Value >= minYil.Value && k.YayinYili.Value <= max);
+                }
+                else if (maxYil.HasValue)
+                {
+                    query = query.Where(k => k.YayinYili.HasValue && k.YayinYili.Value <= maxYil.Value);
+                }
+
                 var total = await query.CountAsync();
 
                 var kitaplar = await query
@@ -129,6 +147,42 @@ namespace ktphnAPI.Controllers
             catch (System.Exception ex)
             {
                 return StatusCode(500, new { success = false, message = "Arama yapılırken hata oluştu.", detail = ex.Message });
+            }
+        }
+
+        [HttpGet("public/distinct-kategoriler")]
+        [Authorize]
+        public async Task<IActionResult> GetDistinctKategoriler()
+        {
+            try
+            {
+                var kategoriler = await _context.Kitaplar
+                    .Where(k => !string.IsNullOrWhiteSpace(k.Kategori))
+                    .Select(k => k.Kategori.Trim())
+                    .Distinct()
+                    .OrderBy(k => k)
+                    .ToListAsync();
+                return Ok(new { success = true, total = kategoriler.Count, data = kategoriler });
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Kategoriler alınırken hata oluştu.", detail = ex.Message });
+            }
+        }
+
+        [HttpGet("public/yil-araligi")]
+        [Authorize]
+        public async Task<IActionResult> GetYilAraligi()
+        {
+            try
+            {
+                var min = await _context.Kitaplar.Where(k => k.YayinYili.HasValue).MinAsync(k => k.YayinYili);
+                var max = await _context.Kitaplar.Where(k => k.YayinYili.HasValue).MaxAsync(k => k.YayinYili);
+                return Ok(new { success = true, min = min, max = max });
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Yıl aralığı alınırken hata oluştu.", detail = ex.Message });
             }
         }
         
@@ -159,6 +213,12 @@ namespace ktphnAPI.Controllers
             if (!ModelState.IsValid) return BadRequest(new { success = false, message = "Model doğrulaması başarısız.", errors = ModelState });
             try
             {
+                // EklemeTarihi boşsa bugünün tarihini ata
+                if (kitap.EklemeTarihi == default || kitap.EklemeTarihi == DateTime.MinValue)
+                {
+                    kitap.EklemeTarihi = DateTime.Now;
+                }
+                
                 _context.Kitaplar.Add(kitap);
                 await _context.SaveChangesAsync();
                 return CreatedAtAction("GetKitap", new { id = kitap.Id }, new { success = true, data = kitap });

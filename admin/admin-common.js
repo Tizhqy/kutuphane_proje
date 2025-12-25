@@ -64,7 +64,7 @@ async function handleLogout() {
             localStorage.removeItem('kutuphane_ad');
             localStorage.removeItem('kutuphane_uyeId');
             localStorage.removeItem('kutuphane_adSoyad');
-            alert('Başarıyla çıkış yapıldı!');
+            // alert('Başarıyla çıkış yapıldı!');
             window.location.href = '../login.html';
         }
     } catch (error) {

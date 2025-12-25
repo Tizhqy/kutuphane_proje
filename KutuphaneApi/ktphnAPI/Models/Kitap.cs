@@ -33,6 +33,6 @@ namespace ktphnAPI.Models
         public string Durum { get; set; } = "musait";
 
         [Column("ekleme_tarihi")]
-        public DateTime EklemeTarihi { get; set; }
+        public DateTime EklemeTarihi { get; set; } = DateTime.Now;
     }
 }
