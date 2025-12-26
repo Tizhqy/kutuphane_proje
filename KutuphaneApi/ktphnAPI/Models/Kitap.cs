@@ -18,7 +18,7 @@ namespace ktphnAPI.Models
         public string Yazar { get; set; } = string.Empty;
 
         [Column("isbn")]
-        public string Isbn { get; set; } = string.Empty;
+        public string? Isbn { get; set; }
 
         [Column("kategori")]
         public string Kategori { get; set; } = string.Empty;

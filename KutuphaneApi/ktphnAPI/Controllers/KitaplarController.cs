@@ -219,6 +219,12 @@ namespace ktphnAPI.Controllers
                     kitap.EklemeTarihi = DateTime.Now;
                 }
                 
+                // Boş ISBN'i NULL olarak kaydet (UNIQUE constraint boş stringleri duplicate sayar)
+                if (string.IsNullOrWhiteSpace(kitap.Isbn))
+                {
+                    kitap.Isbn = null;
+                }
+                
                 _context.Kitaplar.Add(kitap);
                 await _context.SaveChangesAsync();
                 return CreatedAtAction("GetKitap", new { id = kitap.Id }, new { success = true, data = kitap });
@@ -245,7 +251,8 @@ namespace ktphnAPI.Controllers
                 existingKitap.KitapAdi = kitap.KitapAdi;
                 existingKitap.Yazar = kitap.Yazar;
                 existingKitap.Kategori = kitap.Kategori;
-                existingKitap.Isbn = kitap.Isbn;
+                // Boş ISBN'i NULL olarak kaydet
+                existingKitap.Isbn = string.IsNullOrWhiteSpace(kitap.Isbn) ? null : kitap.Isbn;
                 existingKitap.Durum = kitap.Durum;
 
                 _context.Kitaplar.Update(existingKitap);

@@ -601,7 +601,7 @@ function showKitapEditModal(kitapId) {
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 5px; font-weight: bold;">Durum:</label>
                     <select id="editDurum" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                        <option value="mevcut" ${kitap.durum === 'mevcut' ? 'selected' : ''}>Mevcut</option>
+                        <option value="musait" ${kitap.durum === 'musait' ? 'selected' : ''}>Mevcut</option>
                         <option value="odunc" ${kitap.durum === 'odunc' ? 'selected' : ''}>Ödünçte</option>
                         <option value="bakim" ${kitap.durum === 'bakim' ? 'selected' : ''}>Bakımda</option>
                     </select>

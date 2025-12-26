@@ -18,6 +18,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddHostedService<CezaHesaplaPeakService>(); // Ceza hesaplama background servisi
 
 // Rate Limiting
 builder.Services.AddRateLimiter(options =>
