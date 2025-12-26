@@ -71,7 +71,7 @@ async function islemGetir(page = 1, append = false) {
         const res = await fetch(apiurl, { headers });
         if (res.status === 401) {
             tblgovde.innerHTML = '<tr><td colspan="11">Oturum süreniz doldu. Lütfen tekrar giriş yapın.</td></tr>';
-            setTimeout(() => window.location.href = 'login.html', 800);
+            setTimeout(() => window.location.href = '../login.html', 800);
             return;
         }
         if (res.status === 403) {

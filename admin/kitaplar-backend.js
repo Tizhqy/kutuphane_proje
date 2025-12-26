@@ -84,7 +84,7 @@ async function saveNewKitap() {
         const token = localStorage.getItem('kutuphane_token');
         if (!token) {
             showToast('Oturum sonlandırıldı', 'error');
-            window.location.href = 'login.html';
+            window.location.href = '../login.html';
             return;
         }
 
@@ -110,7 +110,7 @@ async function saveNewKitap() {
 
         if (res.status === 401) {
             showToast('Oturum süreniz doldu', 'error');
-            window.location.href = 'login.html';
+            window.location.href = '../login.html';
             return;
         }
 
@@ -278,7 +278,7 @@ async function searchKitaplar(query) {
         
         if (res.status === 401) {
             tblgovde.innerHTML = '<tr><td colspan="6">Oturum süreniz doldu. Lütfen tekrar giriş yapın.</td></tr>';
-            setTimeout(() => window.location.href = 'login.html', 800);
+            setTimeout(() => window.location.href = '../login.html', 800);
             return;
         }
         if (res.status === 403) {
@@ -351,7 +351,7 @@ async function searchKitaplarAdvanced(query, kategori, durum) {
         
         if (res.status === 401) {
             tblgovde.innerHTML = '<tr><td colspan="6">Oturum süreniz doldu. Lütfen tekrar giriş yapın.</td></tr>';
-            setTimeout(() => window.location.href = 'login.html', 800);
+            setTimeout(() => window.location.href = '../login.html', 800);
             return;
         }
         if (res.status === 403) {
@@ -421,7 +421,7 @@ async function kitapGetir() {
         const res = await fetch(apiurl, { headers });
         if (res.status === 401) {
             tblgovde.innerHTML = '<tr><td colspan="6">Oturum süreniz doldu. Lütfen tekrar giriş yapın.</td></tr>';
-            setTimeout(() => window.location.href = 'login.html', 800);
+            setTimeout(() => window.location.href = '../login.html', 800);
             return;
         }
         if (res.status === 403) {
@@ -632,7 +632,7 @@ async function saveKitapChanges(kitapId) {
         const token = localStorage.getItem('kutuphane_token');
         if (!token) {
             showToast('Oturum sonlandırıldı', 'error');
-            window.location.href = 'login.html';
+            window.location.href = '../login.html';
             return;
         }
 
@@ -654,7 +654,7 @@ async function saveKitapChanges(kitapId) {
 
         if (res.status === 401) {
             showToast('Oturum süreniz doldu', 'error');
-            window.location.href = 'login.html';
+            window.location.href = '../login.html';
             return;
         }
 

@@ -342,7 +342,7 @@ async function confirmDelete(id, itemType = 'uye') {
         const token = localStorage.getItem('kutuphane_token');
         if (!token) {
             showToast('Oturum sonlandırıldı', 'error');
-            window.location.href = 'login.html';
+            window.location.href = '../login.html';
             return;
         }
 
@@ -366,7 +366,7 @@ async function confirmDelete(id, itemType = 'uye') {
 
         if (res.status === 401) {
             showToast('Oturum süreniz doldu', 'error');
-            window.location.href = 'login.html';
+            window.location.href = '../login.html';
             return;
         }
 

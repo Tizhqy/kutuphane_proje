@@ -52,7 +52,7 @@ async function cezaGetir() {
         const res = await fetch(apiurl, { headers });
         if (res.status === 401) {
             tblgovde.innerHTML = '<tr><td colspan="7">Oturum süreniz doldu. Lütfen tekrar giriş yapın.</td></tr>';
-            setTimeout(() => window.location.href = 'login.html', 800);
+            setTimeout(() => window.location.href = '../login.html', 800);
             return;
         }
         if (res.status === 403) {
@@ -155,7 +155,7 @@ async function searchCeza(query) {
         
         if (res.status === 401) {
             tblgovde.innerHTML = '<tr><td colspan="7">Oturum süreniz doldu. Lütfen tekrar giriş yapın.</td></tr>';
-            setTimeout(() => window.location.href = 'login.html', 800);
+            setTimeout(() => window.location.href = '../login.html', 800);
             return;
         }
         if (res.status === 403) {
@@ -231,7 +231,7 @@ async function searchCezaAdvanced(query, durum) {
         
         if (res.status === 401) {
             tblgovde.innerHTML = '<tr><td colspan="7">Oturum süreniz doldu. Lütfen tekrar giriş yapın.</td></tr>';
-            setTimeout(() => window.location.href = 'login.html', 800);
+            setTimeout(() => window.location.href = '../login.html', 800);
             return;
         }
         if (res.status === 403) {
@@ -419,7 +419,7 @@ async function cezaAffet(cezaId) {
         const token = localStorage.getItem('kutuphane_token');
         if (!token) {
             showToast('Oturum sonlandırıldı', 'error');
-            window.location.href = 'login.html';
+            window.location.href = '../login.html';
             return;
         }
         
@@ -434,7 +434,7 @@ async function cezaAffet(cezaId) {
         
         if (res.status === 401) {
             showToast('Oturum süreniz doldu', 'error');
-            setTimeout(() => window.location.href = 'login.html', 800);
+            setTimeout(() => window.location.href = '../login.html', 800);
             return;
         }
         
@@ -505,7 +505,7 @@ async function performCezaDelete(cezaId) {
     const token = localStorage.getItem('kutuphane_token');
     if (!token) {
         showToast('Oturum sonlandırıldı', 'error');
-        window.location.href = 'login.html';
+        window.location.href = '../login.html';
         throw new Error('No token');
     }
     const headers = {
