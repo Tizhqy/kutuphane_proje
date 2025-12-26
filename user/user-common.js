@@ -102,6 +102,35 @@ window.showToast = function(message, type = 'info', duration = 5000) {
     }
 })();
 
+// Header'daki global arama kutusu - tüm user sayfalarında çalışır
+(function() {
+    function setupGlobalSearch() {
+        const headerSearchInput = document.querySelector('.search-input');
+        if (!headerSearchInput) return;
+        
+        // Eğer user-kitaplar.html sayfasındaysak, ukitaplar-backend.js zaten handle ediyor
+        if (window.location.pathname.includes('user-kitaplar.html')) return;
+        
+        headerSearchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const query = this.value.trim();
+                if (query) {
+                    // Kitap kataloğu sayfasına arama sorgusuyla yönlendir
+                    window.location.href = `user-kitaplar.html?q=${encodeURIComponent(query)}`;
+                } else {
+                    window.location.href = 'user-kitaplar.html';
+                }
+            }
+        });
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupGlobalSearch);
+    } else {
+        setupGlobalSearch();
+    }
+})();
+
 // Basit ödeme (ceza) modalı - yalnızca UI, işlem yapmaz
 window.showPaymentModal = function(initialAmount) {
     const modal = document.createElement('div');

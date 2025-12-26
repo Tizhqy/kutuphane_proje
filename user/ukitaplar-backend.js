@@ -10,11 +10,30 @@ let currentYearMin = null;
 let currentYearMax = null;
 
 document.addEventListener('DOMContentLoaded', function () {
-    kitapGetir(1, false); // İlk yükleme
+    // URL'den arama sorgusunu al (diğer sayfalardan yönlendirme için)
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryFromUrl = urlParams.get('q');
+    if (queryFromUrl) {
+        currentSearchQuery = queryFromUrl;
+        // Arama kutularına değeri yaz
+        const headerSearchInput = document.querySelector('.search-input');
+        const catalogSearchInput = document.querySelector('.catalog-search-input');
+        if (headerSearchInput) headerSearchInput.value = queryFromUrl;
+        if (catalogSearchInput) catalogSearchInput.value = queryFromUrl;
+    }
+    
     setupModalHandlers();
     setupInfiniteScroll();
     setupSearchHandlers();
     loadDistinctFilters();
+    
+    // URL'de arama varsa search yap, yoksa normal liste
+    if (currentSearchQuery) {
+        searchKitaplar(1, false);
+    } else {
+        kitapGetir(1, false);
+    }
+    
     // Past tarih seçimini engelle
     const dateEl = document.getElementById('reservationDate');
     if (dateEl) {
@@ -99,20 +118,11 @@ function setupSearchHandlers() {
         });
     }
 
-    // Durum filtreleri (Müsait -> musait, Ödünç Verilmiş -> odunc)
+    // Durum filtreleri (value attribute kullan)
     const durumRadios = document.querySelectorAll('input[name="status"]');
     durumRadios.forEach(radio => {
         radio.addEventListener('change', function() {
-            if (this.parentElement.textContent.includes('Tümü')) {
-                currentDurumFilter = '';
-            } else {
-                const durumTexts = {
-                    'Müsait': 'musait',
-                    'Ödünç Verilmiş': 'odunc'
-                };
-                const text = this.parentElement.textContent.trim();
-                currentDurumFilter = durumTexts[text] || '';
-            }
+            currentDurumFilter = this.value || '';
             currentPage = 1;
             applyAllFilters();
         });

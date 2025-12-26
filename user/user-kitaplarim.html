@@ -162,8 +162,8 @@
                     const dueDate = new Date(islem.alimTarihi);
                     dueDate.setDate(dueDate.getDate() + 14);
 
-                    // Gecikmişse ceza tutarı hesapla (günlük 2 TL varsayımı)
-                    const overdueAmount = daysRemaining < 0 ? Math.abs(daysRemaining) * 2 : 0;
+                    // Gecikmişse ceza tutarı hesapla (günlük 5 TL)
+                    const overdueAmount = daysRemaining < 0 ? Math.abs(daysRemaining) * 5 : 0;
                     const penaltyBtn = overdueAmount > 0 
                         ? `<button class="btn-penalty" onclick="showPaymentModal(${overdueAmount})" style="background:#d32f2f; color:#fff; border:none; padding:0.5rem 1rem; border-radius:5px; cursor:pointer; font-size:0.9rem; margin-left:6px;">Ceza Öde (${overdueAmount.toFixed(2)} ₺)</button>`
                         : '';

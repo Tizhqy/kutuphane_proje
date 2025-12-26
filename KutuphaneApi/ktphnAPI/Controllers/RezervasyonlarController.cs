@@ -76,6 +76,31 @@ namespace ktphnAPI.Controllers
                     return NotFound(new { success = false, message = "Kitap bulunamadı." });
                 }
 
+                // Kitap ödünçte ise, iade tarihinden önce rezervasyon yapılamaz
+                if (kitap.Durum == "odunc")
+                {
+                    // Aktif ödünç işlemini bul
+                    var aktifOdunc = await _context.İslemler
+                        .Where(i => i.KitapId == request.KitapId && i.İslemTuru == "odunc" && i.IadeTarihi == null)
+                        .OrderByDescending(i => i.AlimTarihi)
+                        .FirstOrDefaultAsync();
+
+                    if (aktifOdunc != null && aktifOdunc.AlimTarihi.HasValue)
+                    {
+                        // İade tarihi = Alım tarihi + 14 gün
+                        var beklenenIadeTarihi = aktifOdunc.AlimTarihi.Value.AddDays(14).Date;
+                        
+                        // Rezervasyon başlangıç tarihi iade tarihinden önce olamaz
+                        if (startDate <= beklenenIadeTarihi)
+                        {
+                            return BadRequest(new { 
+                                success = false, 
+                                message = $"Bu kitap şu anda ödünçte. En erken {beklenenIadeTarihi.AddDays(1):dd.MM.yyyy} tarihinden itibaren rezervasyon yapabilirsiniz." 
+                            });
+                        }
+                    }
+                }
+
                 var hasOverlap = await _context.Rezervasyonlar.AnyAsync(r =>
                     r.KitapId == request.KitapId &&
                     r.Durum == "aktif" &&
