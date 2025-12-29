@@ -1,4 +1,3 @@
-// v1.0 - Dark mode and global versioning comment added
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ktphnAPI.Data;

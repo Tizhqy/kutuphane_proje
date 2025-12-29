@@ -46,8 +46,8 @@ namespace ktphnAPI.Models
         public DateTime? OlusturmaTarihi { get; set; }
 
         // Navigation Properties
-        public virtual Uye Uye { get; set; }
-        public virtual Kitap Kitap { get; set; }
+        public virtual Uye? Uye { get; set; }
+        public virtual Kitap? Kitap { get; set; }
 
     }
 }

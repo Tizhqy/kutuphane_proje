@@ -1,4 +1,3 @@
-// v1.0 - Dark mode and global versioning comment added
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ktphnAPI.Data;
@@ -57,8 +56,8 @@ namespace ktphnAPI.Controllers
                         c.CezaTutari,
                         c.Durum,
                         c.Aciklama,
-                        KitapAdi = c.Kitap.KitapAdi,
-                        Yazar = c.Kitap.Yazar
+                        KitapAdi = c.Kitap != null ? c.Kitap.KitapAdi : "Kitap Bulunamadı",
+                        Yazar = c.Kitap != null ? c.Kitap.Yazar : "Yazar Bulunamadı",
                     })
                     .ToListAsync();
 
@@ -107,10 +106,10 @@ namespace ktphnAPI.Controllers
                     .Select(c => new
                     {
                         c.Id,
-                        UyeAdSoyad = c.Uye.AdSoyad,
+                        UyeAdSoyad = c.Uye != null ? c.Uye.AdSoyad : "Silinmiş Üye",
                         c.UyeId,
                         c.CezaTuru,
-                        KitapAdi = c.Kitap.KitapAdi,
+                        KitapAdi = c.Kitap != null ? c.Kitap.KitapAdi : "Kitap Bulunamadı",
                         c.CezaTarihi,
                         c.SonOdemeTarihi,
                         c.OdemeTarihi,
@@ -331,37 +330,5 @@ namespace ktphnAPI.Controllers
             }
         }
 
-        // TEST ENDPOINT: Email Gönder (Admin)
-        [HttpPost("test-email/{email}")]
-        [Authorize(Roles = "admin")]
-        public async Task<IActionResult> SendTestEmail(string email)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(email))
-                    return BadRequest(new { success = false, message = "Email adresi gereklidir." });
-
-                // EmailService'i DI container'dan al
-                var emailService = HttpContext.RequestServices.GetRequiredService<IEmailService>();
-                
-                await emailService.SendTestEmailAsync(email);
-
-                return Ok(new
-                {
-                    success = true,
-                    message = $"Test emaili {email} adresine gönderildi."
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Test email gönderme hatası: {ex.Message}");
-                return StatusCode(500, new
-                {
-                    success = false,
-                    message = "Email gönderme hatası oluştu.",
-                    detail = ex.Message
-                });
-            }
-        }
     }
 }

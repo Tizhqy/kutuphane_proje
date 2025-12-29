@@ -193,7 +193,8 @@ namespace ktphnAPI.Services
                         if (mailGonderilmeli && ceza.Uye?.Email != null)
                         {
                             // Güncel ceza tutarını hesapla (gecikme günü artmış olabilir)
-                            var gecikGun = (int)Math.Ceiling((DateTime.UtcNow - ceza.Islem.AlimTarihi.Value.AddDays(14)).TotalDays);
+                            var alimTarihi = ceza.Islem?.AlimTarihi ?? DateTime.UtcNow;
+                            var gecikGun = (int)Math.Ceiling((DateTime.UtcNow - alimTarihi.AddDays(14)).TotalDays);
                             decimal guncelCezaTutari = gecikGun * gunlukCeza;
                             
                             // Maksimum cezayı kontrol et
@@ -208,7 +209,7 @@ namespace ktphnAPI.Services
                             await emailService.SendCezaBildirimAsync(
                                 ceza.Uye.Email,
                                 ceza.Uye.AdSoyad,
-                                ceza.Kitap.KitapAdi,
+                                ceza.Kitap?.KitapAdi ?? "Silinmiş Kitap",
                                 guncelCezaTutari,
                                 ceza.SonOdemeTarihi ?? DateTime.UtcNow
                             );

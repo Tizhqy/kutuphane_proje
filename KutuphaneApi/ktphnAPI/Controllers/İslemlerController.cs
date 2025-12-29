@@ -1,4 +1,3 @@
-// global commit
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ktphnAPI.Data;
@@ -228,7 +227,7 @@ namespace ktphnAPI.Controllers
                             iadeTarihi
                         );
                     }
-                    catch (System.Exception mailEx)
+                    catch (System.Exception)
                     {
                         // Mail hatası işlemi engellemesin, sadece log'la
                         // Mail gönderilemese bile ödünç alma işlemi başarılı

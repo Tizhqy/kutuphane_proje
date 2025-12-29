@@ -221,5 +221,5 @@ python -m http.server 8080
 ![GitHub issues](https://img.shields.io/github/issues/Tizhqy/kutuphane_proje)
 
 **Son Güncelleme**: Aralık 2025  
-**Sürüm**: v1.6
+**Sürüm**: v1.8
 **Durum**: Aktif Geliştirme 🚀

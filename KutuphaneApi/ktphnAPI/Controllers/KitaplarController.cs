@@ -1,4 +1,3 @@
-// global commit
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ktphnAPI.Data;
@@ -106,7 +105,7 @@ namespace ktphnAPI.Controllers
                     query = query.Where(k => 
                         k.KitapAdi.Contains(q) || 
                         k.Yazar.Contains(q) || 
-                        k.Isbn.Contains(q));
+                        (k.Isbn != null && k.Isbn.Contains(q)));
                 }
 
                 // Kategori filtreleme
