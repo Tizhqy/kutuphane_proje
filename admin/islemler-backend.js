@@ -1,3 +1,4 @@
+// v1.0 - Dark mode and global versioning comment added
 let currentPage = 1;
 const pageSize = 20;
 let hasMore = false;

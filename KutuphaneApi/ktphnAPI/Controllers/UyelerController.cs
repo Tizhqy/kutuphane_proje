@@ -1,3 +1,4 @@
+// v1.0 - Dark mode and global versioning comment added
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ktphnAPI.Data;
@@ -20,35 +21,38 @@ namespace ktphnAPI.Controllers
             _context = context;
         }
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<UyeListDto>>> GetUyeler()
+        public async Task<ActionResult<IEnumerable<UyeListDto>>> GetUyeler([FromQuery] int page = 1, [FromQuery] int pageSize = 50)
         {
-            var uyeler = await _context.Uyeler.ToListAsync();
-            var sonuc = new List<UyeListDto>(uyeler.Count);
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 50;
+            if (pageSize > 200) pageSize = 200;
 
-            foreach (var uye in uyeler)
-            {
-                var roller = await (from ur in _context.UyeRolleri
-                                    join r in _context.Roller on ur.RolId equals r.Id
-                                    where ur.UyeId == uye.Id
-                                    select r.RolAdi).ToListAsync();
+            var total = await _context.Uyeler.CountAsync();
 
-                var rolIsimleri = string.Join(", ", roller);
-                if (string.IsNullOrWhiteSpace(rolIsimleri)) rolIsimleri = "Öğrenci";
+            // Tek sorguda tüm üyeleri ve rollerini al (N+1 çözümü)
+            var uyelerWithRoles = await _context.Uyeler
+                .OrderBy(u => u.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .GroupJoin(
+                    _context.UyeRolleri.Join(_context.Roller, ur => ur.RolId, r => r.Id, (ur, r) => new { ur.UyeId, r.RolAdi }),
+                    u => u.Id,
+                    ur => ur.UyeId,
+                    (u, roller) => new UyeListDto
+                    {
+                        Id = u.Id,
+                        AdSoyad = u.AdSoyad,
+                        Email = u.Email,
+                        Telefon = u.Telefon,
+                        OgrenciNo = u.OgrenciNo,
+                        Durum = u.Durum,
+                        KayitTarihi = u.KayitTarihi,
+                        RolIsimleri = roller.Any() ? string.Join(", ", roller.Select(r => r.RolAdi)) : "Öğrenci"
+                    })
+                .ToListAsync();
 
-                sonuc.Add(new UyeListDto
-                {
-                    Id = uye.Id,
-                    AdSoyad = uye.AdSoyad,
-                    Email = uye.Email,
-                    Telefon = uye.Telefon,
-                    OgrenciNo = uye.OgrenciNo,
-                    Durum = uye.Durum,
-                    KayitTarihi = uye.KayitTarihi,
-                    RolIsimleri = rolIsimleri
-                });
-            }
-
-            return Ok(sonuc);
+            var hasMore = page * pageSize < total;
+            return Ok(new { success = true, total, page, pageSize, hasMore, data = uyelerWithRoles });
         }
 
         [HttpGet("{id}")]

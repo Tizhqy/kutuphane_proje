@@ -1,3 +1,4 @@
+// v1.0 - Dark mode and global versioning comment added
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;

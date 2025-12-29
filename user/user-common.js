@@ -1,3 +1,4 @@
+// v1.0 - Dark mode and global versioning comment added
 // User sayfaları için ortak fonksiyonlar
 
 // Toast notification utility

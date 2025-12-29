@@ -6,6 +6,7 @@ namespace ktphnAPI.Models
 {
     [Table("roller")]
 
+        // global commit
     public class Rol
     {
         [Key]

@@ -1,3 +1,4 @@
+// v1.0 - Dark mode and global versioning comment added
 // Toast notification utility
 function showToast(message, type = 'info', duration = 4000) {
     const existing = document.querySelectorAll('.app-toast');

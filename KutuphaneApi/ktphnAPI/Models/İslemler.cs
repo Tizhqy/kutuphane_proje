@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ktphnAPI.Models
 {
+        // global commit
     [Table("kitap_islemler")]
     public class İslemler
     {

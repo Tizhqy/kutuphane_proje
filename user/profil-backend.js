@@ -1,3 +1,4 @@
+// v1.0 - Dark mode and global versioning comment added
 document.addEventListener('DOMContentLoaded', function () {
     const girisYapanID = localStorage.getItem('kutuphane_id');
     if (!girisYapanID) {

@@ -49,19 +49,20 @@ namespace ktphnAPI.Controllers
             }
 
             // Email format kontrolü (ekstra güvenlik için)
-            if (!System.Text.RegularExpressions.Regex.IsMatch(istek.Email, 
-                @"^[^@\s]+@[^@\s]+\.[^@\s]+$", 
+            if (!System.Text.RegularExpressions.Regex.IsMatch(istek.Email,
+                @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase))
             {
                 return BadRequest(new { mesaj = "Geçerli bir email adresi giriniz." });
             }
 
             // Şifre güçlülük kontrolü (ekstra güvenlik için)
-            if (!System.Text.RegularExpressions.Regex.IsMatch(istek.Sifre, 
+            if (!System.Text.RegularExpressions.Regex.IsMatch(istek.Sifre,
                 @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$"))
             {
-                return BadRequest(new { 
-                    mesaj = "Şifre en az bir büyük harf, bir küçük harf ve bir rakam içermelidir." 
+                return BadRequest(new
+                {
+                    mesaj = "Şifre en az bir büyük harf, bir küçük harf ve bir rakam içermelidir."
                 });
             }
 
@@ -86,8 +87,6 @@ namespace ktphnAPI.Controllers
                 Telefon = null
             };
 
-            _context.Uyeler.Add(yeniUye);
-            await _context.SaveChangesAsync();
 
             // Default role'ü ata (user/ogrenci)
             var userRol = await _context.Roller
@@ -102,6 +101,32 @@ namespace ktphnAPI.Controllers
                 };
                 _context.UyeRolleri.Add(uyeRol);
                 await _context.SaveChangesAsync();
+            }
+
+            try
+            {
+                await _emailService.SendEmailAsync(
+                    yeniUye.Email,
+                    "Kayıt Başarılı ✔️",
+                        $@"<html>
+                            <body style='font-family: Arial;'>
+                                <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
+                                    <h2>Hoş geldiniz, {yeniUye.AdSoyad} 👋</h2>
+                                    <p>Kütüphane sistemimize başarıyla kayıt oldunuz.</p>
+                                    <p>Artık giriş yaparak kitapları görüntüleyebilir, ödünç alabilir ve hesabınızı yönetebilirsiniz.</p>
+                                    <br/>
+                                    <p style='color: #777; font-size: 12px;'>Bu e-posta otomatik gönderilmiştir, lütfen yanıtlamayın.</p>
+                                </div>
+                            </body>
+                        </html>",
+                    isHtml: true
+                );
+
+                _logger.LogInformation("Kayıt maili gönderildi: {email}", yeniUye.Email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Kayıt maili gönderilemedi: {email}", yeniUye.Email);
             }
 
             return Ok(new
@@ -125,9 +150,9 @@ namespace ktphnAPI.Controllers
             }
 
             var rollerList = await (from ur in _context.UyeRolleri
-                                     join r in _context.Roller on ur.RolId equals r.Id
-                                     where ur.UyeId == uye.Id
-                                     select new { r.RolAdi, r.YetkiSeviyesi }).ToListAsync();
+                                    join r in _context.Roller on ur.RolId equals r.Id
+                                    where ur.UyeId == uye.Id
+                                    select new { r.RolAdi, r.YetkiSeviyesi }).ToListAsync();
 
             string kullaniciRolu;
             if (rollerList != null && rollerList.Count > 0)
@@ -186,11 +211,12 @@ namespace ktphnAPI.Controllers
             }
 
             // Şifre güçlülük kontrolü (ekstra güvenlik için)
-            if (!System.Text.RegularExpressions.Regex.IsMatch(istek.YeniSifre, 
+            if (!System.Text.RegularExpressions.Regex.IsMatch(istek.YeniSifre,
                 @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$"))
             {
-                return BadRequest(new { 
-                    mesaj = "Yeni şifre en az bir büyük harf, bir küçük harf ve bir rakam içermelidir!" 
+                return BadRequest(new
+                {
+                    mesaj = "Yeni şifre en az bir büyük harf, bir küçük harf ve bir rakam içermelidir!"
                 });
             }
 
@@ -209,7 +235,7 @@ namespace ktphnAPI.Controllers
             }
 
             var uye = await _context.Uyeler.FirstOrDefaultAsync(u => u.Email == istek.Email);
-            
+
             // Güvenlik: Hesap olup olmadığını söyleme (timing attack prevention için her durumda aynı süre)
             await Task.Delay(500);
 
@@ -236,7 +262,7 @@ namespace ktphnAPI.Controllers
                 {
                     _logger.LogError(ex, "Hesap bulunamadı maili gönderilemedi: {email}", istek.Email);
                 }
-                
+
                 return Ok(new { success = true, mesaj = "Eğer hesabınız varsa, e-posta adresinize şifre sıfırlama talimatları gönderildi." });
             }
 
@@ -278,16 +304,16 @@ namespace ktphnAPI.Controllers
         {
             if (string.IsNullOrWhiteSpace(raw)) return "ogrenci";
             var r = raw.ToLower().Trim();
-            
+
             if (r.Contains("admin") || r.Contains("super") || r.Contains("süper") || r == "super_admin" || r.Contains("yonetici") || r.Contains("yönetici"))
                 return "admin";
-            
+
             if (r.Contains("akademisyen") || r == "academic" || r == "akademik")
                 return "akademisyen";
-            
+
             if (r.Contains("personel") || r == "staff" || r == "calisan" || r == "çalışan")
                 return "personel";
-            
+
             return "ogrenci";
         }
 

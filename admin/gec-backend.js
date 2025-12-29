@@ -1,3 +1,4 @@
+// v1.0 - Dark mode and global versioning comment added
 document.addEventListener('DOMContentLoaded', function () {
     loadCezaStats();
     cezaGetir();

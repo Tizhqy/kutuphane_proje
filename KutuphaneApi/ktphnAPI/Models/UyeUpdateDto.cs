@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ktphnAPI.Models
 {
+        // v1.0 - Dark mode and global versioning comment added
     public class UyeUpdateDto
     {
         [Required(ErrorMessage = "Ad Soyad gereklidir")]

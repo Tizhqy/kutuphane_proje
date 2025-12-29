@@ -1,3 +1,4 @@
+// v1.0 - Dark mode and global versioning comment added
 // Pagination settings
 let uyelerPaginationPage = 1;
 const UYELER_PAGE_SIZE = 30;

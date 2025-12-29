@@ -1,3 +1,4 @@
+// global commit
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ktphnAPI.Data;
@@ -157,6 +158,9 @@ namespace ktphnAPI.Controllers
         [Authorize]
         public async Task<IActionResult> OduncAl([FromBody] OduncAlRequest request)
         {
+            // Transaction ile pessimistic locking - aynı anda iki kişinin aynı kitabı almasını engeller
+            using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            
             try
             {
                 var uyeIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -165,16 +169,22 @@ namespace ktphnAPI.Controllers
                     return Unauthorized(new { success = false, message = "Oturum bulunamadı!" });
                 }
 
-                var kitap = await _context.Kitaplar.FindAsync(request.KitapId);
+                // FOR UPDATE ile kitabı kilitle - başka transaction beklemek zorunda kalır
+                var kitap = await _context.Kitaplar
+                    .FromSqlRaw("SELECT * FROM kitaplar WHERE kitap_id = {0} FOR UPDATE", request.KitapId)
+                    .FirstOrDefaultAsync();
+                    
                 if (kitap == null || kitap.Durum != "musait")
                 {
-                    return BadRequest(new { success = false, message = "Kitap mevcut değil!" });
+                    await transaction.RollbackAsync();
+                    return BadRequest(new { success = false, message = "Kitap mevcut değil veya başkası tarafından alındı!" });
                 }
 
                 var mevcutOdunc = await _context.İslemler
                     .FirstOrDefaultAsync(i => i.UyeId == uyeId && i.KitapId == request.KitapId && i.İslemTuru == "odunc" && i.IadeTarihi == null);
                 if (mevcutOdunc != null)
                 {
+                    await transaction.RollbackAsync();
                     return BadRequest(new { success = false, message = "Bu kitabı zaten ödünç almışsınız!" });
                 }
 
@@ -202,6 +212,7 @@ namespace ktphnAPI.Controllers
                 // _context.Kitaplar.Update(kitap);
 
                 await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
 
                 // Mail gönder (kullanıcı bilgilerini al)
                 var uye = await _context.Uyeler.FindAsync(uyeId);
@@ -228,6 +239,7 @@ namespace ktphnAPI.Controllers
             }
             catch (System.Exception ex)
             {
+                await transaction.RollbackAsync();
                 return StatusCode(500, new { success = false, message = "İşlem sırasında hata oluştu.", detail = ex.Message });
             }
         }
@@ -288,10 +300,14 @@ namespace ktphnAPI.Controllers
 
         [HttpGet("geciken")]
         [Authorize]
-        public async Task<IActionResult> Geciken()
+        public async Task<IActionResult> Geciken([FromQuery] int page = 1, [FromQuery] int pageSize = 50)
         {
             try
             {
+                if (page < 1) page = 1;
+                if (pageSize < 1) pageSize = 50;
+                if (pageSize > 200) pageSize = 200;
+
                 var uyeIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 int? uyeId = null;
                 
@@ -312,9 +328,31 @@ namespace ktphnAPI.Controllers
                     query = query.Where(i => i.UyeId == uyeId.Value);
                 }
 
-                var geciken = await query.ToListAsync();
+                var total = await query.CountAsync();
 
-                return Ok(new { success = true, total = geciken.Count, data = geciken });
+                // Tek sorguda kitap ve üye bilgisi ile birlikte al
+                var geciken = await query
+                    .OrderByDescending(i => i.AlimTarihi)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Join(_context.Kitaplar, i => i.KitapId, k => k.Id, (i, k) => new { Islem = i, Kitap = k })
+                    .Join(_context.Uyeler, ik => ik.Islem.UyeId, u => u.Id, (ik, u) => new
+                    {
+                        ik.Islem.Id,
+                        ik.Islem.UyeId,
+                        UyeAdSoyad = u.AdSoyad,
+                        UyeEmail = u.Email,
+                        ik.Islem.KitapId,
+                        KitapAdi = ik.Kitap.KitapAdi,
+                        Yazar = ik.Kitap.Yazar,
+                        ik.Islem.AlimTarihi,
+                        SonIadeTarihi = ik.Islem.AlimTarihi.HasValue ? ik.Islem.AlimTarihi.Value.AddDays(14) : (DateTime?)null,
+                        GecikmeGun = ik.Islem.AlimTarihi.HasValue ? (int)Math.Ceiling((DateTime.UtcNow - ik.Islem.AlimTarihi.Value.AddDays(14)).TotalDays) : 0
+                    })
+                    .ToListAsync();
+
+                var hasMore = page * pageSize < total;
+                return Ok(new { success = true, total, page, pageSize, hasMore, data = geciken });
             }
             catch (System.Exception ex)
             {

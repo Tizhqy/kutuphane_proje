@@ -1,3 +1,4 @@
+// v1.0 - Dark mode and global versioning comment added
 // Pagination settings
 let kitaplarPaginationPage = 1;
 const KITAPLAR_PAGE_SIZE = 30;

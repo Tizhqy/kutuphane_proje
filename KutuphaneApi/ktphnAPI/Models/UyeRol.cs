@@ -10,6 +10,7 @@ namespace ktphnAPI.Models
         [Column("id")]
         public int Id { get; set; }
 
+    // global commit
         [Column("uye_id")]
         public int UyeId { get; set; }
 

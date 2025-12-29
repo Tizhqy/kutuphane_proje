@@ -1,3 +1,4 @@
+// global commit
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ktphnAPI.Data;
@@ -21,12 +22,23 @@ namespace ktphnAPI.Controllers
 
         [HttpGet]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> GetKitaplar()
+        public async Task<IActionResult> GetKitaplar([FromQuery] int page = 1, [FromQuery] int pageSize = 50)
         {
             try
             {
-                var kitaplar = await _context.Kitaplar.ToListAsync();
-                return Ok(new { success = true, total = kitaplar.Count, data = kitaplar });
+                if (page < 1) page = 1;
+                if (pageSize < 1) pageSize = 50;
+                if (pageSize > 200) pageSize = 200;
+
+                var total = await _context.Kitaplar.CountAsync();
+                var kitaplar = await _context.Kitaplar
+                    .OrderBy(k => k.Id)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var hasMore = page * pageSize < total;
+                return Ok(new { success = true, total, page, pageSize, hasMore, data = kitaplar });
             }
             catch (System.Exception ex)
             {
