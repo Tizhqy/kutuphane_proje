@@ -170,12 +170,7 @@ async function islemGetir(page = 1, append = false) {
         tblgovde.innerHTML = '<tr><td colspan="11">Backend ile bağlantı kurulamadı.</td></tr>';
     }
 }
-function islemSil(id) {
-    if (confirm(id + ' ID\'li islemi silmek istiyor musunuz?')) {
-        console.log("Silinecek:", id);
 
-    }
-}
 
 async function islemDetay(id) {
     try {
@@ -265,9 +260,6 @@ function showIslemDetail(islem) {
     document.body.appendChild(modal);
 }
 
-function islemOnayla(id) {
-    console.log("Onayla:", id);
-}
 
 // -- Table scroller helpers -------------------------------------------------
 function ensureTableScroller() {

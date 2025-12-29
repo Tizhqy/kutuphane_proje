@@ -504,16 +504,7 @@ function loadMoreKitaplar() {
         isLoadingMore = false;
     }, 200);
 }
-function kitapSil(id) {
-    if (confirm(id + ' ID\'li kitabı silmek istiyor musunuz?')) {
-        console.log("Silinecek:", id);
 
-    }
-}
-
-function kitapDuzenle(id) {
-    console.log("Düzenlenecek:", id);
-}
 
 // ID'ye göre kitap detayını göster
 function showKitapDetailById(id) {

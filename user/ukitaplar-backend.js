@@ -196,7 +196,6 @@ function searchKitaplar(page = 1, append = false) {
 
     fetch(apiurl, { headers })
         .then(response => {
-            console.log('API Response status:', response.status);
             if (response.status === 401) {
                 console.error('401 Unauthorized - Token geçersiz veya yok');
                 showToast('Oturum süreniz doldu. Lütfen yeniden giriş yapın.', 'error');
@@ -205,8 +204,6 @@ function searchKitaplar(page = 1, append = false) {
             }
             if (response.status === 403) {
                 console.error('403 Forbidden - Yetki yok');
-                console.log('Token:', localStorage.getItem('kutuphane_token'));
-                console.log('Rol:', localStorage.getItem('kutuphane_rol'));
                 showToast('Bu alan için yetkiniz yok.', 'error');
                 return null;
             }
@@ -344,7 +341,6 @@ function kitapGetir(page = 1, append = false) {
 
     fetch(apiurl, { headers })
         .then(response => {
-            console.log('API Response status:', response.status);
             if (response.status === 401) {
                 console.error('401 Unauthorized - Token geçersiz veya yok');
                 showToast('Oturum süreniz doldu. Lütfen yeniden giriş yapın.', 'error');
@@ -353,8 +349,7 @@ function kitapGetir(page = 1, append = false) {
             }
             if (response.status === 403) {
                 console.error('403 Forbidden - Yetki yok');
-                console.log('Token:', localStorage.getItem('kutuphane_token'));
-                console.log('Rol:', localStorage.getItem('kutuphane_rol'));
+
                 showToast('Bu alan için yetkiniz yok.', 'error');
                 return null;
             }

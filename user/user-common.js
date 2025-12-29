@@ -3,7 +3,6 @@
 
 // Toast notification utility
 window.showToast = function(message, type = 'info', duration = 5000) {
-    console.log(`[${type.toUpperCase()}] ${message}`);
     
     if (!document.getElementById('toast-container')) {
         const container = document.createElement('div');
@@ -52,7 +51,6 @@ window.showToast = function(message, type = 'info', duration = 5000) {
             const normalizedRole = (userRole || 'ogrenci').toLowerCase().replace('_', ' ').trim();
             const displayRole = rolMap[normalizedRole] || rolMap[userRole.toLowerCase()] || 'Öğrenci';
             roleEl.textContent = displayRole;
-            console.log('Rol ayarlandı:', userRole, '→', displayRole);
         }
 
         function logout() {

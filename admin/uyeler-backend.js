@@ -310,12 +310,6 @@ function loadMoreUyeler() {
 }
 
 
-function uyeSil(id) {
-    if (confirm(id + ' ID\'li üyeyi silmek istediğinize emin misiniz?')) {
-        console.log("Silinecek ID:", id);
-    }
-}
-
 async function uyeleriAra(query) {
     if (!query) {
         uyeleriGetir();
@@ -495,9 +489,6 @@ async function uyeleriAraAdvanced(query, durum) {
     }
 }
 
-function uyeDuzenle(id) {
-    console.log("Düzenlenecek ID:", id);
-}
 
 // ID'ye göre üye detayını göster
 function showUyeDetailById(id) {
