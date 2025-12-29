@@ -41,10 +41,10 @@ namespace ktphnAPI.Controllers
             if (!ModelState.IsValid)
             {
                 var errors = ModelState
-                    .Where(x => x.Value?.Errors.Count > 0)
-                    .SelectMany(x => x.Value!.Errors)
-                    .Select(x => x.ErrorMessage)
-                    .ToList();
+                            .Where(x => x.Value?.Errors.Count > 0)
+                            .SelectMany(x => x.Value!.Errors)
+                            .Select(x => x.ErrorMessage)
+                            .ToList();
                 return BadRequest(new { mesaj = "Validasyon hatası", hatalar = errors });
             }
 
@@ -75,179 +75,203 @@ namespace ktphnAPI.Controllers
                 return BadRequest(new { mesaj = "Bu email zaten kayıtlı." });
             }
 
-            // Yeni user oluştur
-            var yeniUye = new Uye
+            using (var transaction = await _context.Database.BeginTransactionAsync())
             {
-                AdSoyad = $"{istek.Ad.Trim()} {istek.Soyad.Trim()}",
-                Email = istek.Email.ToLower().Trim(), // Email'i küçük harfe çevir
-                Sifre = BCrypt.Net.BCrypt.HashPassword(istek.Sifre),  // Hash'le
-                Durum = "aktif",
-                KayitTarihi = System.DateTime.UtcNow,
-                OgrenciNo = null,  // Boş string yerine null kullan (unique constraint için)
-                Telefon = null
-            };
-
-
-            // Default role'ü ata (user/ogrenci)
-            var userRol = await _context.Roller
-                .FirstOrDefaultAsync(r => r.RolAdi == "user" || r.RolAdi == "ogrenci");
-
-            if (userRol != null)
-            {
-                var uyeRol = new UyeRol
+                try
                 {
-                    UyeId = yeniUye.Id,
-                    RolId = userRol.Id
-                };
-                _context.UyeRolleri.Add(uyeRol);
-                await _context.SaveChangesAsync();
-            }
+                    // 1. Yeni user nesnesini hazırla
+                    var yeniUye = new Uye
+                    {
+                        AdSoyad = $"{istek.Ad.Trim()} {istek.Soyad.Trim()}",
+                        Email = istek.Email.ToLower().Trim(),
+                        Sifre = BCrypt.Net.BCrypt.HashPassword(istek.Sifre),
+                        Durum = "aktif",
+                        KayitTarihi = System.DateTime.UtcNow,
+                        OgrenciNo = null,
+                        Telefon = null
+                    };
 
-            try
-            {
-                await _emailService.SendEmailAsync(
-                    yeniUye.Email,
-                    "Kayıt Başarılı ✔️",
-                        $@"<html>
-                            <body style='font-family: Arial;'>
-                                <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
-                                    <h2>Hoş geldiniz, {yeniUye.AdSoyad} 👋</h2>
-                                    <p>Kütüphane sistemimize başarıyla kayıt oldunuz.</p>
-                                    <p>Artık giriş yaparak kitapları görüntüleyebilir, ödünç alabilir ve hesabınızı yönetebilirsiniz.</p>
-                                    <br/>
-                                    <p style='color: #777; font-size: 12px;'>Bu e-posta otomatik gönderilmiştir, lütfen yanıtlamayın.</p>
-                                </div>
-                            </body>
-                        </html>",
-                    isHtml: true
-                );
+                    // 2. ÖNCE ÜYEYİ EKLE VE KAYDET (Hatanın Çözümü Burada)
+                    _context.Uyeler.Add(yeniUye);
+                    await _context.SaveChangesAsync(); // Bu satır çalışınca yeniUye.Id oluşur (örn: 5)
 
-                _logger.LogInformation("Kayıt maili gönderildi: {email}", yeniUye.Email);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Kayıt maili gönderilemedi: {email}", yeniUye.Email);
-            }
+                    // 3. Sonra Rolü Ata
+                    var userRol = await _context.Roller
+                        .FirstOrDefaultAsync(r => r.RolAdi == "user" || r.RolAdi == "ogrenci");
 
-            return Ok(new
-            {
-                mesaj = "Kayıt başarılı. Artık giriş yapabilirsiniz.",
-                uyeId = yeniUye.Id,
-                email = yeniUye.Email
-            });
-        }
+                    if (userRol != null)
+                    {
+                        var uyeRol = new UyeRol
+                        {
+                            UyeId = yeniUye.Id, // Artık ID var, hata vermez
+                            RolId = userRol.Id
+                        };
+                        _context.UyeRolleri.Add(uyeRol);
+                        await _context.SaveChangesAsync();
+                    }
 
-        [HttpPost("login")]
-        [EnableRateLimiting("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDto istek)
-        {
-            var uye = await _context.Uyeler
-                .FirstOrDefaultAsync(u => u.Email == istek.Email);
+                    // 4. Her şey hatasızsa işlemi onayla (Commit)
+                    await transaction.CommitAsync();
 
-            if (uye == null || !BCrypt.Net.BCrypt.Verify(istek.Sifre, uye.Sifre))
-            {
-                return Unauthorized(new { mesaj = "E-mail veya şifre hatalı!" });
-            }
+                    // ---------------------------------------------------------
+                    // TRANSACTION BİTİŞİ - Veritabanı işi bitti, şimdi mail atabiliriz
+                    // ---------------------------------------------------------
 
-            var rollerList = await (from ur in _context.UyeRolleri
-                                    join r in _context.Roller on ur.RolId equals r.Id
-                                    where ur.UyeId == uye.Id
-                                    select new { r.RolAdi, r.YetkiSeviyesi }).ToListAsync();
+                    // Mail Gönderme (Transaction dışına aldık, mail patlarsa üye silinmesin diye)
+                    try
+                    {
+                        await _emailService.SendEmailAsync(
+                            yeniUye.Email,
+                            "Kayıt Başarılı ✔️",
+                            $@"<html>
+                        <body style='font-family: Arial;'>
+                            <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
+                                <h2>Hoş geldiniz, {yeniUye.AdSoyad} 👋</h2>
+                                <p>Kütüphane sistemimize başarıyla kayıt oldunuz.</p>
+                                <p>Artık giriş yaparak kitapları görüntüleyebilir, ödünç alabilir ve hesabınızı yönetebilirsiniz.</p>
+                                <br/>
+                                <p style='color: #777; font-size: 12px;'>Bu e-posta otomatik gönderilmiştir.</p>
+                            </div>
+                        </body>
+                    </html>",
+                            isHtml: true
+                        );
+                        _logger.LogInformation("Kayıt maili gönderildi: {email}", yeniUye.Email);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Mail gitmese bile kayıt başarılı olsun, logla geç
+                        _logger.LogError(ex, "Kayıt maili gönderilemedi: {email}", yeniUye.Email);
+                    }
 
-            string kullaniciRolu;
-            if (rollerList != null && rollerList.Count > 0)
-            {
-                var top = rollerList.OrderByDescending(x => x.YetkiSeviyesi).First();
-                var raw = (top.RolAdi ?? "ogrenci").ToLower();
-                kullaniciRolu = NormalizeRole(raw);
-            }
-            else
-            {
-                kullaniciRolu = "ogrenci";
-            }
-
-            var token = GenerateJwtToken(uye, kullaniciRolu);
-
-            return Ok(new
-            {
-                mesaj = "Giriş Başarılı",
-                uyeId = uye.Id,
-                adSoyad = uye.AdSoyad,
-                rol = kullaniciRolu,
-                token
-            });
-        }
-
-        [HttpPost("change-password")]
-        [Authorize]
-        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto istek)
-        {
-            // Model validasyonu
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState
-                    .Where(x => x.Value?.Errors.Count > 0)
-                    .SelectMany(x => x.Value!.Errors)
-                    .Select(x => x.ErrorMessage)
-                    .ToList();
-                return BadRequest(new { mesaj = "Validasyon hatası", hatalar = errors });
-            }
-
-            var uyeIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(uyeIdClaim) || !int.TryParse(uyeIdClaim, out int uyeId))
-            {
-                return Unauthorized(new { mesaj = "Oturum bulunamadı!" });
-            }
-
-            var uye = await _context.Uyeler.FindAsync(uyeId);
-            if (uye == null)
-            {
-                return NotFound(new { mesaj = "Kullanıcı bulunamadı!" });
-            }
-
-            if (!BCrypt.Net.BCrypt.Verify(istek.EskiSifre, uye.Sifre))
-            {
-                return BadRequest(new { mesaj = "Mevcut şifre yanlış!" });
-            }
-
-            // Şifre güçlülük kontrolü (ekstra güvenlik için)
-            if (!System.Text.RegularExpressions.Regex.IsMatch(istek.YeniSifre,
-                @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$"))
-            {
-                return BadRequest(new
+                    return Ok(new
+                    {
+                        mesaj = "Kayıt başarılı. Artık giriş yapabilirsiniz.",
+                        uyeId = yeniUye.Id,
+                        email = yeniUye.Email
+                    });
+                }
+                catch (Exception ex)
                 {
-                    mesaj = "Yeni şifre en az bir büyük harf, bir küçük harf ve bir rakam içermelidir!"
+                    // Hata olursa (örn: Rol eklerken) üyeyi de geri al (Rollback)
+                    await transaction.RollbackAsync();
+                    _logger.LogError(ex, "Kayıt sırasında transaction hatası");
+                    return StatusCode(500, new { mesaj = "Kayıt işlemi sırasında bir hata oluştu.", detay = ex.Message });
+                }
+                }
+            }
+
+            [HttpPost("login")]
+            [EnableRateLimiting("login")]
+            public async Task<IActionResult> Login([FromBody] LoginDto istek)
+            {
+                var uye = await _context.Uyeler
+                    .FirstOrDefaultAsync(u => u.Email == istek.Email);
+
+                if (uye == null || !BCrypt.Net.BCrypt.Verify(istek.Sifre, uye.Sifre))
+                {
+                    return Unauthorized(new { mesaj = "E-mail veya şifre hatalı!" });
+                }
+
+                var rollerList = await (from ur in _context.UyeRolleri
+                                        join r in _context.Roller on ur.RolId equals r.Id
+                                        where ur.UyeId == uye.Id
+                                        select new { r.RolAdi, r.YetkiSeviyesi }).ToListAsync();
+
+                string kullaniciRolu;
+                if (rollerList != null && rollerList.Count > 0)
+                {
+                    var top = rollerList.OrderByDescending(x => x.YetkiSeviyesi).First();
+                    var raw = (top.RolAdi ?? "ogrenci").ToLower();
+                    kullaniciRolu = NormalizeRole(raw);
+                }
+                else
+                {
+                    kullaniciRolu = "ogrenci";
+                }
+
+                var token = GenerateJwtToken(uye, kullaniciRolu);
+
+                return Ok(new
+                {
+                    mesaj = "Giriş Başarılı",
+                    uyeId = uye.Id,
+                    adSoyad = uye.AdSoyad,
+                    rol = kullaniciRolu,
+                    token
                 });
             }
 
-            uye.Sifre = BCrypt.Net.BCrypt.HashPassword(istek.YeniSifre);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { mesaj = "Şifre başarıyla değiştirildi!" });
-        }
-
-        [HttpPost("forgot-password")]
-        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto istek)
-        {
-            if (string.IsNullOrWhiteSpace(istek.Email))
+            [HttpPost("change-password")]
+            [Authorize]
+            public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto istek)
             {
-                return BadRequest(new { success = false, mesaj = "Email adresi gereklidir" });
+                // Model validasyonu
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState
+                        .Where(x => x.Value?.Errors.Count > 0)
+                        .SelectMany(x => x.Value!.Errors)
+                        .Select(x => x.ErrorMessage)
+                        .ToList();
+                    return BadRequest(new { mesaj = "Validasyon hatası", hatalar = errors });
+                }
+
+                var uyeIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(uyeIdClaim) || !int.TryParse(uyeIdClaim, out int uyeId))
+                {
+                    return Unauthorized(new { mesaj = "Oturum bulunamadı!" });
+                }
+
+                var uye = await _context.Uyeler.FindAsync(uyeId);
+                if (uye == null)
+                {
+                    return NotFound(new { mesaj = "Kullanıcı bulunamadı!" });
+                }
+
+                if (!BCrypt.Net.BCrypt.Verify(istek.EskiSifre, uye.Sifre))
+                {
+                    return BadRequest(new { mesaj = "Mevcut şifre yanlış!" });
+                }
+
+                // Şifre güçlülük kontrolü (ekstra güvenlik için)
+                if (!System.Text.RegularExpressions.Regex.IsMatch(istek.YeniSifre,
+                    @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$"))
+                {
+                    return BadRequest(new
+                    {
+                        mesaj = "Yeni şifre en az bir büyük harf, bir küçük harf ve bir rakam içermelidir!"
+                    });
+                }
+
+                uye.Sifre = BCrypt.Net.BCrypt.HashPassword(istek.YeniSifre);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { mesaj = "Şifre başarıyla değiştirildi!" });
             }
 
-            var uye = await _context.Uyeler.FirstOrDefaultAsync(u => u.Email == istek.Email);
-
-            // Güvenlik: Hesap olup olmadığını söyleme (timing attack prevention için her durumda aynı süre)
-            await Task.Delay(500);
-
-            if (uye == null)
+            [HttpPost("forgot-password")]
+            public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto istek)
             {
-                // Hesap yoksa da mail gönder (kullanıcıya hesap olmadığını bildirmek için)
-                try
+                if (string.IsNullOrWhiteSpace(istek.Email))
                 {
-                    await _emailService.SendEmailAsync(
-                        istek.Email,
-                        "Şifre Sıfırlama Talebi",
-                        $@"<html><body style='font-family: Arial;'>
+                    return BadRequest(new { success = false, mesaj = "Email adresi gereklidir" });
+                }
+
+                var uye = await _context.Uyeler.FirstOrDefaultAsync(u => u.Email == istek.Email);
+
+                // Güvenlik: Hesap olup olmadığını söyleme (timing attack prevention için her durumda aynı süre)
+                await Task.Delay(500);
+
+                if (uye == null)
+                {
+                    // Hesap yoksa da mail gönder (kullanıcıya hesap olmadığını bildirmek için)
+                    try
+                    {
+                        await _emailService.SendEmailAsync(
+                            istek.Email,
+                            "Şifre Sıfırlama Talebi",
+                            $@"<html><body style='font-family: Arial;'>
                             <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
                                 <h2 style='color: #d32f2f;'>⚠️ Hesap Bulunamadı</h2>
                                 <p>Bu e-posta adresi ile kayıtlı bir hesap bulunamadı.</p>
@@ -255,36 +279,36 @@ namespace ktphnAPI.Controllers
                                 <p style='color: #666; font-size: 12px; margin-top: 20px;'>Bu bir otomatik mail'dir.</p>
                             </div>
                         </body></html>",
-                        isHtml: true
-                    );
+                            isHtml: true
+                        );
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Hesap bulunamadı maili gönderilemedi: {email}", istek.Email);
+                    }
+
+                    return Ok(new { success = true, mesaj = "Eğer hesabınız varsa, e-posta adresinize şifre sıfırlama talimatları gönderildi." });
+                }
+
+                // Geçici şifre oluştur (8 karakter, karışık)
+                var yeniSifre = GenerateRandomPassword(8);
+                uye.Sifre = BCrypt.Net.BCrypt.HashPassword(yeniSifre);
+                await _context.SaveChangesAsync();
+
+                // Mail gönder
+                try
+                {
+                    await _emailService.SendPasswordResetAsync(uye.Email, uye.AdSoyad, yeniSifre);
+                    _logger.LogInformation("Şifre sıfırlama maili gönderildi: {email}", uye.Email);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Hesap bulunamadı maili gönderilemedi: {email}", istek.Email);
+                    _logger.LogError(ex, "Şifre sıfırlama maili gönderilemedi: {email}", uye.Email);
+                    return StatusCode(500, new { success = false, mesaj = "Mail gönderilirken hata oluştu" });
                 }
 
                 return Ok(new { success = true, mesaj = "Eğer hesabınız varsa, e-posta adresinize şifre sıfırlama talimatları gönderildi." });
             }
-
-            // Geçici şifre oluştur (8 karakter, karışık)
-            var yeniSifre = GenerateRandomPassword(8);
-            uye.Sifre = BCrypt.Net.BCrypt.HashPassword(yeniSifre);
-            await _context.SaveChangesAsync();
-
-            // Mail gönder
-            try
-            {
-                await _emailService.SendPasswordResetAsync(uye.Email, uye.AdSoyad, yeniSifre);
-                _logger.LogInformation("Şifre sıfırlama maili gönderildi: {email}", uye.Email);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Şifre sıfırlama maili gönderilemedi: {email}", uye.Email);
-                return StatusCode(500, new { success = false, mesaj = "Mail gönderilirken hata oluştu" });
-            }
-
-            return Ok(new { success = true, mesaj = "Eğer hesabınız varsa, e-posta adresinize şifre sıfırlama talimatları gönderildi." });
-        }
 
         private string GenerateRandomPassword(int length)
         {
