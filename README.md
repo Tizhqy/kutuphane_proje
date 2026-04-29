@@ -1,3 +1,13 @@
+## 🌍 English Summary
+
+This project is a modern, full-stack **Digital Library Management System** developed using a **.NET 8 Web API** backend and a Vanilla JavaScript frontend. Built with enterprise-level software engineering practices, it features secure authentication, role-based access control, and automated database operations.
+
+**🚀 Key Technical Highlights:**
+* **Backend Engine:** Built with **ASP.NET Core 8 Web API** and **Entity Framework Core**.
+* **Security Architecture:** Implemented **JWT Bearer Authentication** (Token-based), **BCrypt** password hashing, and **Rate Limiting** to prevent brute-force attacks.
+* **Smart Database (MySQL):** Utilized relational database design with **Automated Triggers** (e.g., automatic penalty calculation for late returns, real-time book status updates).
+* **Frontend:** Responsive, mobile-first UI built with HTML5, CSS3, and ES6+ JavaScript utilizing the Fetch API for seamless asynchronous communication.
+
 # 📚 KTU Kütüphane Yönetim Sistemi (Full-Stack)
 
 Bu proje, **Karadeniz Teknik Üniversitesi (KTÜ)** için geliştirilmiş, **.NET Core Web API** ve **MySQL** altyapısı ile güçlendirilmiş modern bir dijital kütüphane yönetim sistemidir.
